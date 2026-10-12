@@ -1,9 +1,9 @@
 schema_version: 1
 course: MB120P163
-lesson: L00
+lesson: L10
 academic_year: "2026-27"
-title: "Doplňte název lekce"
-subtitle: "Doplňte podnázev lekce"
+title: "Tvar rozdělení, transformace a nelinearita"
+subtitle: "Šikmá data a zakřivený vztah mezi plochou ostrova a počtem druhů"
 resources:
   learning:
     html: Learning_materials/skripta.html
@@ -16,7 +16,11 @@ resources:
   exercises:
     - label: "R skript ke cvičení"
       path: Exercises/cviceni.R
-  data: []
+  data:
+    - label: "Počty druhů na ostrovech Galapág"
+      path: data/druhy_galapagy.csv
   extras:
     - label: "Licence materiálů a kódu"
       path: LICENSE.md
+    - label: "Původ dat o ostrovech Galapág"
+      path: data/README.md

@@ -12,4 +12,5 @@ Use this file as the running history for lesson-production decisions and stage t
 
 | Date | Stage | Status | Key change | Record file | Branch / PR | Reviewer |
 |---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  |
+| 2026-10-12 | Stage 0 | done | Scope locked: distribution shape and normality of residuals, scale-preserving versus shape-changing transformations (z-score versus logarithm), and biologically motivated functional forms; skripta is the complete source and the presentation distils it | `Workflow/records/2026-10-12-stage-0-scope.md` | `lesson/l10-scope-data` / PR not opened | Ondřej Mottl |
+| 2026-10-12 | Stage 1 | done (provisional) | Ten-example search across seven source families; Galápagos species-area (`faraway::galamiss`) locked with the raw species count kept, reproducible acquisition, provenance, README and release metadata; Coweeta trees declined to avoid repeating L09 | `Workflow/records/2026-10-12-stage-1-dataset.md` | `lesson/l10-scope-data` / PR not opened | Ondřej Mottl |
