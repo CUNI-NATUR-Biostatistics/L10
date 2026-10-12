@@ -1,0 +1,56 @@
+{
+  "$schema": "https://raw.githubusercontent.com/CUNI-NATUR-Biostatistics/_internal/main/pollslive/quiz.schema.json",
+  "schemaVersion": 2,
+  "academicYear": "2026-27",
+  "lesson": "L02",
+  "retrievesLesson": "L01",
+  "lectureDate": "2026-10-12",
+  "title": "TECHNICAL EXAMPLE ONLY - 2026/27 - REPLACE WITH APPROVED QUIZ",
+  "questions": [
+    {
+      "id": "replace-question-one",
+      "text": "Replace with the approved first evidence-reading question.",
+      "options": [
+        { "id": "a", "label": "Replace option A" },
+        { "id": "b", "label": "Replace option B" }
+      ],
+      "correctOptionId": "a",
+      "explanation": "Replace with a short explanation grounded in the displayed evidence.",
+      "media": {
+        "path": "assets/replace-question-one.png",
+        "alt": "Replace with an informative description of the evidence image.",
+        "provenance": "Replace with the source and reproducible generation details."
+      }
+    },
+    {
+      "id": "replace-question-two",
+      "text": "Replace with the approved second evidence-reading question.",
+      "options": [
+        { "id": "a", "label": "Replace option A" },
+        { "id": "b", "label": "Replace option B" }
+      ],
+      "correctOptionId": "a",
+      "explanation": "Replace with a short explanation grounded in the displayed evidence.",
+      "media": {
+        "path": "assets/replace-question-two.png",
+        "alt": "Replace with an informative description of the evidence image.",
+        "provenance": "Replace with the source and reproducible generation details."
+      }
+    },
+    {
+      "id": "replace-question-three",
+      "text": "Replace with the approved third evidence-reading question.",
+      "options": [
+        { "id": "a", "label": "Replace option A" },
+        { "id": "b", "label": "Replace option B" }
+      ],
+      "correctOptionId": "a",
+      "explanation": "Replace with a short explanation grounded in the displayed evidence.",
+      "media": {
+        "path": "assets/replace-question-three.png",
+        "alt": "Replace with an informative description of the evidence image.",
+        "provenance": "Replace with the source and reproducible generation details."
+      }
+    }
+  ]
+}

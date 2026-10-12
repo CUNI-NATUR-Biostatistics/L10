@@ -1,0 +1,59 @@
+# Workflow Templates
+
+This folder contains fill-in templates for the stage-by-stage lesson lifecycle.
+
+Use these files to keep implementation practical, reviewable, and historically traceable.
+
+## How to use
+
+1. Check `git branch --show-current`, `git status --short`, and
+   `git log -1 --oneline` before editing.
+2. Confirm that the branch belongs to the intended stage group and is based on
+   the updated default branch after the previous pull request was merged.
+3. Duplicate the relevant template from `Workflow/templates/`.
+4. Save it in `Workflow/records/` with a date prefix, for example:
+   - `2026-07-14-stage-0-scope.md`
+   - `2026-07-15-stage-1-dataset.md`
+   - `2026-07-18-stage-4-slides.md`
+   - `2026-07-22-exercise-blueprint.md`
+5. Add one short entry to `Workflow/STAGE_LOG.md` summarizing what changed,
+   including the branch and pull request.
+6. Link the record file in your PR description.
+
+The Stage 2 and Stage 4 records contain mandatory story maps. Complete the relevant story map and knowledge-state ledger first, then stop and obtain explicit human approval before drafting full student-facing prose or slide text. Learning-materials and presentation story maps require separate approvals. Record the approver, date, decision, and requested revisions; general autonomy, approval of scope or data, silence, and later artifact review do not satisfy this gate. Keep `Internal role`, `Student-facing heading`, and `Speaker note` separate, run the audits, set `Story-map status` to `complete`, and set `Human story-map approval` to `approved` only after explicit agreement. The drafting agent and independent reviewer must verify the matching record at the relevant later review gate.
+
+## Required branch and pull-request boundaries
+
+| Pull request | Stages | Suggested branch | Start condition |
+|---|---|---|---|
+| Planning | 0-1 | `lesson/<week>-scope-data` | New branch from the default branch |
+| Written materials | 2-3 | `lesson/<week>-skripta` | Planning PR merged; branch from updated default branch |
+| Presentation | 4-5 | `lesson/<week>-presentation` | Written-materials PR merged; branch from updated default branch |
+| Exercise | Post-presentation | `lesson/<week>-exercises` | Presentation approved and PR merged; branch from updated default branch |
+
+Do not continue from one group into the next on the same branch. Before opening
+each pull request, check `git status --short` and `git diff --stat`; include only
+the intended stage group, its workflow records, and generated outputs belonging
+to sources changed in that group.
+
+Open the pull request when the stage-group draft is ready, perform its human
+review and revisions on that same branch/PR, and merge it before creating the
+next stage branch. Assistants must still obtain user authorization before
+creating or switching branches, pushing, or opening/merging pull requests.
+
+For release preparation, post-merge validation, and publication receipts, follow the [canonical publication workflow](../../_internal/.ai/core/publication.md#release-preparation-and-recordkeeping). Workflow record-copying and stage-log steps apply to authoring and pre-merge preparation. Post-merge release results go in the GitHub Release description and leave the lesson working tree unchanged; actual source fixes retain the normal branch and PR workflow.
+
+## Recommended sequence
+
+1. `stage-0-scope.md`
+2. `stage-1-dataset.md`
+3. `stage-2-learning-materials.md` (includes the mandatory learning-materials story map)
+4. `stage-4-slides.md` (includes the mandatory per-slide story map and the Stage 5 presentation review)
+5. `exercise-blueprint.md` (post-presentation exercise design, validation, independent review, and human review)
+6. `stage-5-review-release.md` (pre-merge preparation and external post-merge receipt)
+
+## Why this exists
+
+- Keeps weekly lesson production consistent.
+- Makes review faster (same structure every week).
+- Preserves a clear history of decisions and revisions.
