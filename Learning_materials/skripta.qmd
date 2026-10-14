@@ -1116,9 +1116,141 @@ Přímka říká, že každý další kilometr čtvereční přidá v průměru 
 
 ## Co přesně má být u lineárního modelu normální?
 
-Viděli jsme, že počet druhů i plocha jsou silně pravostranně šikmé. Znamená to, že `r render_glossary_term("linearni-model", display = "lineární model")` pro tato data nelze použít?
+Viděli jsme, že počet druhů i plocha jsou silně pravostranně šikmé. Znamená to, že `r render_glossary_term("linearni-model", display = "lineární model")` pro tato data nelze použít? Odpověď začíná otázkou, z čeho se počet druhů jednoho ostrova podle modelu skládá.
 
-::: {.box-question title="Co musí mít přibližně normální rozdělení?"}
+```{r}
+#| label: rozlozit-jeden-ostrov
+#| echo: false
+data_rozklad <-
+  tibble::tibble(
+    ostrov = data_ostrovy$ostrov,
+    plocha_km2 = data_ostrovy$plocha_km2,
+    pocet_druhu = data_ostrovy$pocet_druhu,
+    odhad = stats::fitted(mod_primka),
+    residuum = stats::residuals(mod_primka)
+  )
+
+# Ostrov s největším kladným residuem ukáže rozklad nejzřetelněji
+ostrov_rozklad <-
+  data_rozklad |>
+  dplyr::slice_max(order_by = residuum, n = 1)
+```
+
+```{r}
+#| label: zobrazit-rozklad-ostrova
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 4
+#| fig-cap: !expr 'paste0("Počet druhů ostrova ", ostrov_rozklad$ostrov, " rozložený na odhad přímky (kosočtverec na přímce) a residuum (svislá úsečka).")'
+#| fig-alt: "Bodový graf ostrovů s přímkou. Jeden ostrov je zvýrazněný a svislá úsečka spojuje přímku s jeho skutečným počtem druhů, který leží vysoko nad přímkou."
+ggplot2::ggplot(
+  data = data_rozklad,
+  mapping = ggplot2::aes(x = plocha_km2, y = pocet_druhu)
+) +
+  ggplot2::geom_abline(
+    intercept = koef_primka[["(Intercept)"]],
+    slope = koef_primka[["plocha_km2"]],
+    color = barva_hlavni,
+    linewidth = 1.1
+  ) +
+  ggplot2::geom_point(color = "#8A8A8A", size = 2.2) +
+  ggplot2::geom_segment(
+    data = ostrov_rozklad,
+    mapping = ggplot2::aes(xend = plocha_km2, y = odhad, yend = pocet_druhu),
+    color = barva_doplnkova,
+    linewidth = 1.3
+  ) +
+  ggplot2::geom_point(
+    data = ostrov_rozklad,
+    mapping = ggplot2::aes(y = odhad),
+    shape = 23,
+    size = 4,
+    fill = barva_hlavni,
+    color = barva_text
+  ) +
+  ggplot2::geom_point(data = ostrov_rozklad, color = barva_doplnkova, size = 3.5) +
+  ggplot2::annotate(
+    geom = "text",
+    x = ostrov_rozklad$plocha_km2,
+    y = ostrov_rozklad$pocet_druhu,
+    label = ostrov_rozklad$ostrov,
+    hjust = -0.15,
+    size = 4
+  ) +
+  ggplot2::labs(
+    x = "Plocha ostrova (km²)",
+    y = "Počet druhů rostlin"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Ostrov `r ostrov_rozklad$ostrov` má `r ostrov_rozklad$pocet_druhu` druhů. Přímka pro jeho plochu odhaduje `r formatC(ostrov_rozklad$odhad, format = "f", digits = 0)` druhů a zbytek, `r formatC(ostrov_rozklad$residuum, format = "f", digits = 0)` druhů, je jeho `r render_glossary_term("residuum", display = "residuum")`:
+
+$$
+`r ostrov_rozklad$pocet_druhu` = `r formatC(ostrov_rozklad$odhad, format = "f", digits = 0)` + `r formatC(ostrov_rozklad$residuum, format = "f", digits = 0)`.
+$$
+
+Totéž platí pro každý ostrov: **pozorovaná hodnota = odhad přímky + residuum.** Přímka nese systematickou část vztahu, residuum to, co přímka nevysvětlila.
+
+::: {.box-question title="Jak by vypadala residua, kdyby přímka seděla?"}
+Představte si, že by přímka zachytila všechno systematické, co plocha o počtu druhů prozrazuje. Co by v residuích zbylo? Načrtněte, jak by vypadal jejich histogram.
+:::
+
+```{r}
+#| label: simulovat-residua-dobre-primky
+#| echo: false
+set.seed(seed_kurz)
+
+pocet_simulovanych_residui <- 300
+
+data_residua_dobre_primky <-
+  tibble::tibble(
+    residuum = stats::rnorm(
+      n = pocet_simulovanych_residui,
+      mean = 0,
+      sd = stats::sd(stats::residuals(mod_primka))
+    )
+  )
+```
+
+```{r}
+#| label: zobrazit-residua-dobre-primky
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 3.4
+#| fig-cap: !expr 'paste0("Simulace: ", pocet_simulovanych_residui, " residuí přímky, která vztah vystihuje. Směrodatná odchylka je stejná jako u residuí ostrovů; tmavá křivka je normální rozdělení.")'
+#| fig-alt: "Histogram simulovaných residuí tvoří souměrný zvon kolem nuly, přes který je položena hladká křivka normálního rozdělení."
+ggplot2::ggplot(
+  data = data_residua_dobre_primky,
+  mapping = ggplot2::aes(x = residuum)
+) +
+  ggplot2::geom_histogram(
+    mapping = ggplot2::aes(y = ggplot2::after_stat(density)),
+    bins = 25,
+    fill = "#8A8A8A",
+    color = "white"
+  ) +
+  ggplot2::stat_function(
+    fun = stats::dnorm,
+    args = list(mean = 0, sd = stats::sd(data_residua_dobre_primky$residuum)),
+    color = barva_text,
+    linewidth = 1
+  ) +
+  ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = barva_text) +
+  ggplot2::labs(
+    x = "Residuum (simulovaná hodnota)",
+    y = "Hustota"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Kdyby přímka vystihovala vztah, zbyly by v residuích jen náhodné odchylky: kladné i záporné, malé častěji než velké, rozložené souměrně kolem nuly. Tvar se blíží zvonu normálního rozdělení z předchozí kapitoly. **Právě takový tvar residuí lineární model předpokládá.** O tvaru samotné `r render_glossary_term("odezva", display = "odezvy")` nebo `r render_glossary_term("prediktor", display = "prediktoru")` přitom nic netvrdí. Ověřte si, že je to jasné:
+
+::: {.box-question title="Ověřte si: co musí mít přibližně normální rozdělení?"}
 Lineární model předpokládá přibližně normální rozdělení:
 
 a) `r render_glossary_term("odezva", display = "odezvy")` (počtu druhů),
@@ -2563,7 +2695,7 @@ aic_e <- data_aic_kandidatu$aic[5]
 Kandidát A má `r render_glossary_term("aic", display = "AIC")` `r formatC(aic_a, format = "f", digits = 1)` a kandidát C má AIC `r formatC(aic_c, format = "f", digits = 1)`. Znamená to, že je model C mnohem lepší?
 :::
 
-Ne. Rozdíl `r formatC(aic_a - aic_c, format = "f", digits = 1)` vypadá obrovsky, ale nic neříká. Pravidlo z předchozí lekce zní: **AIC lze porovnávat jen mezi modely se stejnou `r render_glossary_term("odezva", display = "odezvou")` na stejných `r render_glossary_term("pozorovani", display = "pozorováních")`.** Model A popisuje počet druhů, model C jeho logaritmus. Logaritmus stlačí velké hodnoty, takže `r render_glossary_term("residuum", display = "residua")` modelu C jsou čísla v úplně jiném měřítku než residua modelu A. AIC by se změnilo i tehdy, kdybychom použili logaritmus o jiném základu, aniž by se model jakkoli zlepšil. Stejné omezení platí pro R².
+Ne. Rozdíl `r formatC(aic_a - aic_c, format = "f", digits = 1)` vypadá obrovsky, ale nic neříká. Pravidlo z předchozí lekce zní: **AIC lze porovnávat jen mezi modely se stejnou `r render_glossary_term("odezva", display = "odezvou")` na stejných `r render_glossary_term("pozorovani", display = "pozorováních")`.** Model A popisuje počet druhů, model C jeho logaritmus. Logaritmus stlačí velké hodnoty, takže `r render_glossary_term("residuum", display = "residua")` modelu C jsou čísla v úplně jiném měřítku než residua modelu A. AIC by se změnilo i tehdy, kdybychom použili logaritmus o jiném základu, aniž by se model jakkoli zlepšil. Stejné omezení platí pro R²: u modelu A popisuje podíl variability počtu druhů, u modelu C podíl variability jeho logaritmu. Modely pro různé škály odezvy proto porovnáváme jinak: podle průběhu křivek převedených na původní osy a podle vzorů v residuích (nikoli podle velikosti residuí, která jsou v různých jednotkách).
 
 Kandidáty proto porovnáme ve dvou oddělených skupinách:
 
@@ -2978,7 +3110,7 @@ AIC(object = mod_stromy_log_prumer)
 #| fig-width: 8.5
 #| fig-height: 3.6
 #| fig-cap: "Residua dvou modelů výšky stromů podle odhadnuté výšky. Oranžová křivka pouze vyhlazuje průběh bodů."
-#| fig-alt: "Dva grafy residuí. Vlevo tvoří vyhlazená křivka zřetelný oblouk. Vpravo je vyhlazená křivka téměř vodorovná kolem nuly."
+#| fig-alt: "Dva grafy residuí. Vlevo tvoří vyhlazená křivka zřetelný oblouk. Vpravo je vyhlazená křivka plošší; u stromů s odhadnutou výškou zhruba 10 až 20 m zůstává pod nulou, pro vyšší stromy leží u nuly."
 ggplot2::ggplot(
   data = data_residua_stromu_dva,
   mapping = ggplot2::aes(x = odhad, y = residuum)
@@ -3000,7 +3132,7 @@ ggplot2::ggplot(
   ggplot2::theme_bw(base_size = 12)
 ```
 
-Oblouk se výrazně zploštil, ale nezmizel úplně: u nejmenších stromů zůstává systematická odchylka, protože model jejich výšku podhodnocuje až o několik metrů. AIC kleslo z `r formatC(aic_stromy_primka, format = "f", digits = 1)` na `r formatC(aic_stromy_log, format = "f", digits = 1)`. Odpověď na otázku z předchozí lekce tedy zní: **tvar vztahu byl hlavní, i když ne jediný problém.** Nejmenší stromy by si zasloužily další pozornost, například jiný tvar vztahu nebo kontrolu jejich měření. Podle nového modelu přidá každé zdvojnásobení průměru kmene stromu asi `r formatC(vyska_na_zdvojnasobeni, format = "f", digits = 1)` m výšky.
+Oblouk se zploštil, ale nezmizel úplně: stromy s odhadnutou výškou zhruba 10–20 m model stále systematicky přeceňuje (jejich residua leží převážně pod nulou), zatímco u vyšších stromů leží residua kolem nuly. AIC kleslo z `r formatC(aic_stromy_primka, format = "f", digits = 1)` na `r formatC(aic_stromy_log, format = "f", digits = 1)`. Odpověď na otázku z předchozí lekce tedy zní: **tvar vztahu byl hlavní, i když ne jediný problém.** Nižší stromy by si zasloužily další pozornost, například jiný tvar vztahu nebo kontrolu jejich měření. Podle nového modelu přidá každé zdvojnásobení průměru kmene stromu asi `r formatC(vyska_na_zdvojnasobeni, format = "f", digits = 1)` m výšky.
 
 Kvadratický model by měl AIC ještě o něco nižší (`r formatC(aic_stromy_kvadraticky, format = "f", digits = 1)`). Jeho parabola má ale vrchol u průměru kmene asi `r formatC(prumer_vrchol_stromy, format = "f", digits = 0)` cm a pro `r pocet_stromu_za_vrcholem` nejširších stromů předpovídá, že jsou *nižší* než užší stromy. Je to stejná lekce jako u ostrovů: nejnižší AIC nenahradí biologickou úvahu o tvaru vztahu.
 :::
