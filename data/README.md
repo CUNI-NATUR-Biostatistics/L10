@@ -9,3 +9,9 @@ Reprodukovatelnou přípravu provádí skript `R/prepare_galapagos_data.R`. Skri
 SHA-256 souboru `druhy_galapagy.csv`: `a60499f4070e59dfe729035bdb2d14fb84ca6c2db5fee3694ceca1ce84c98fb2`.
 
 Na tato převzatá data se nevztahuje licence původního výukového obsahu v kořenovém `LICENSE.md`; při dalším použití uveďte původní zdroj a balíček `faraway`.
+
+## Stromy z předchozí lekce
+
+Soubor `allometrie_stromu.csv` je nezměněná kopie výukové tabulky z lekce L09 (63 jehličnanů; průměr kmene, výška stromu a druh). V této lekci slouží jen k připomenutí grafu residuí z předchozí lekce. Data pocházejí z datasetu `allometry` v balíčku [`lgrdata` 0.1.1](https://cran.r-project.org/package=lgrdata); měření jsou připisována Johnu Marshallovi z University of Idaho a jsou zveřejněna pod licencí [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Reprodukovatelnou přípravu obsahuje skript `R/prepare_allometry_data.R` v repozitáři L09.
+
+SHA-256 souboru `allometrie_stromu.csv`: `62b9f39eabfe8622a97a8791ee3e5c85c2d0f81c65ea85ca5be3b87a68477043`.

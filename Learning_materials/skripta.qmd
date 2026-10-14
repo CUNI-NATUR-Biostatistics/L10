@@ -1,6 +1,6 @@
 ---
-title: "TODO: Název přednášky"
-subtitle: "Podkladové čtenářské materiály k přednášce"
+title: "Proč mají větší ostrovy více druhů rostlin?"
+subtitle: "Tvar rozdělení, transformace a nelinearita — podkladové čtenářské materiály k přednášce"
 lang: cs
 filters:
   - ../theme/semantic-boxes.lua
@@ -27,7 +27,7 @@ format:
       - "skripta_theme.typ"
       - "skripta-logo.typ"
     date: last-modified
-date: 2026/02/26
+date: 2026/10/12
 date-format: long
 date-modified: last-modified
 ---
@@ -40,47 +40,84 @@ if (!require("here")) install.packages("here")
 here::i_am("Learning_materials/skripta.qmd")
 
 if (!require("tidyverse")) install.packages("tidyverse")
-if (!require("ggbeeswarm")) install.packages("ggbeeswarm")
-if (!require("palmerpenguins")) install.packages("palmerpenguins")
 if (!require("glossary")) install.packages("glossary")
 
 library(tidyverse)
-library(ggbeeswarm)
-library(palmerpenguins)
 library(glossary)
 
-# Glossary: point to the canonical slovnik pojmy.yaml hosted on GitHub.
-# Terms are looked up by slug ID (e.g. "histogram", "median", "boxplot").
+# Síťové doplňky nesmějí při renderování blokovat lokální výstup.
+options(timeout = 15)
+
+# Glossary: prefer the canonical local slovnik copy in the course workspace.
 # Usage in text: `r render_glossary_term("slug", display = "Czech term")`
-# The glossary_style() call applies brand colours to the hover tooltip (HTML only).
-local_pojmy <- tempfile(fileext = ".yaml")
-tryCatch(
-  {
-    download.file(
-      url = "https://raw.githubusercontent.com/CUNI-NATUR-Biostatistics/slovnik/main/pojmy.yaml",
-      destfile = local_pojmy,
-      quiet = TRUE
-    )
-    glossary::glossary_path(local_pojmy)
-  },
-  error = function(e) {
-    message("Glossary YAML unavailable: ", conditionMessage(e))
-  }
-)
-tryCatch(
-  {
-    source(
-      paste0(
-        "https://raw.githubusercontent.com/",
-        "CUNI-NATUR-Biostatistics/slovnik/main/",
-        "R/Functions/render_glossary_term.R"
+local_pojmy <-
+  here::here(
+    "..",
+    "slovnik",
+    "pojmy.yaml"
+  )
+
+if (!file.exists(local_pojmy)) {
+  local_pojmy <- tempfile(fileext = ".yaml")
+
+  tryCatch(
+    {
+      download.file(
+        url = paste0(
+          "https://raw.githubusercontent.com/",
+          "CUNI-NATUR-Biostatistics/slovnik/main/pojmy.yaml"
+        ),
+        destfile = local_pojmy,
+        quiet = TRUE,
+        mode = "wb"
       )
-    )
-  },
-  error = function(e) {
-    source(here::here("R/Functions/render_glossary_term.R"))
-  }
-)
+    },
+    error = function(e) {
+      message("Glossary YAML unavailable: ", conditionMessage(e))
+    }
+  )
+}
+
+if (file.exists(local_pojmy)) {
+  glossary::glossary_path(local_pojmy)
+}
+
+local_glossary_helper <-
+  here::here(
+    "..",
+    "slovnik",
+    "R",
+    "Functions",
+    "render_glossary_term.R"
+  )
+
+if (file.exists(local_glossary_helper)) {
+  source(local_glossary_helper)
+} else {
+  tryCatch(
+    {
+      source(
+        paste0(
+          "https://raw.githubusercontent.com/",
+          "CUNI-NATUR-Biostatistics/slovnik/main/",
+          "R/Functions/render_glossary_term.R"
+        )
+      )
+    },
+    error = function(e) {
+      source(here::here("R/Functions/render_glossary_term.R"))
+    }
+  )
+}
+
+# Společné barvy grafů v celé lekci
+barva_hlavni <- "#5D2890"
+barva_doplnkova <- "#F3A712"
+barva_cara <- "#D55E00"
+barva_text <- "#2E2E2E"
+
+# Společné semínko pro všechny simulace
+seed_kurz <- 900723
 ```
 
 ```{r}
@@ -119,66 +156,2901 @@ if (knitr::is_html_output()) {
 }
 ```
 
-## Úvod
-
-TODO: Stručný úvod do tématu přednášky. Vysvětlete biologický kontext a motivaci.
-
-## TODO: Hlavní část
-
-TODO: Obsah hlavní části skripta. Používejte podnadpisy (###) pro strukturování textu.
-
-### TODO: Podkapitola
-
-TODO: Text podkapitoly s biologickými příklady a R kódem.
-
 ```{r}
-#| label: demo
-#| echo: true
-# TODO: ukázka kódu v R
+#| label: zobrazit-souostrovi
+#| echo: false
+#| out-width: "70%"
+#| fig-align: center
+#| fig-cap: "Souostroví Galapágy na družicovém snímku z 12. března 2002. Největší ostrov ve tvaru písmene L je Isabela, vlevo od něj leží Fernandina. Snímek: Jacques Descloitres, MODIS Rapid Response Project, NASA/GSFC (volné dílo)."
+#| fig-alt: "Družicový snímek tmavě modrého oceánu s rozptýlenými ostrovy Galapág. Ostrovy se velmi liší velikostí: od několika obrovských sopečných ostrovů po drobné skalky."
+knitr::include_graphics(
+  path = here::here(
+    "Learning_materials",
+    "images",
+    "galapagy-satelit-2002.jpg"
+  )
+)
 ```
 
-## Ukázka sémantických boxů
+Galapágy leží v Tichém oceánu asi tisíc kilometrů od pobřeží Ekvádoru. Na snímku je vidět, jak odlišné ostrovy souostroví tvoří: několik obrovských sopečných ostrovů a mnoho malých ostrůvků a skalek. Botanici na nich spočítali druhy cévnatých rostlin a zjistili, že větší ostrovy jich hostí více. Takový vztah ekologové znají z ostrovů, horských vrcholů i ostrůvků lesa v zemědělské krajině.
 
-Při přípravě lekce nahraďte následující ukázky konkrétním obsahem, nebo nepoužité typy odstraňte.
-
-::: {.box-question title="Než zobrazíte výsledek"}
-TODO: Krátká otázka, předpověď nebo interpretační úkol pro studenty.
+::: {.box-question title="Hlavní otázka"}
+Jak rychle roste počet druhů rostlin s plochou ostrova? Má ostrov, který je dvakrát větší, také dvakrát více druhů?
 :::
 
-::: {.box-result title="Co ukázala analýza"}
-TODO: Hlavní výsledek nebo závěr v biologicky smysluplných jednotkách.
+Než si odpovíte, zkuste odhadnout: kdyby ostrov měl desetkrát větší plochu, kolikrát více druhů byste na něm čekali? Na konci lekce svůj odhad porovnáte s tím, co ukážou data.
+
+# Co prozradil oblouk v residuích stromů?
+
+Abychom na otázku o ostrovech mohli odpovědět, budeme potřebovat popsat zakřivený vztah. S takovým vztahem jsme se setkali už v předchozí lekci, kde jsme porovnávali kandidátní modely pro výšku jehličnanů. Nejlépe obhajitelný byl aditivní model s průměrem kmene a druhem stromu. U jeho `r render_glossary_term("residuum", display = "residuí")` však zůstal jeden vzor, ke kterému se nyní vrátíme.
+
+```{r}
+#| label: pripravit-residua-stromu
+#| echo: false
+#| message: false
+#| warning: false
+data_stromy <-
+  readr::read_csv(
+    file = here::here("data", "allometrie_stromu.csv"),
+    show_col_types = FALSE
+  )
+
+mod_stromy_aditivni <-
+  stats::lm(
+    formula = vyska_stromu_m ~ prumer_kmene_cm + druh_stromu,
+    data = data_stromy
+  )
+
+data_residua_stromu <-
+  tibble::tibble(
+    odhadnuta_vyska = stats::fitted(mod_stromy_aditivni),
+    residuum = stats::residuals(mod_stromy_aditivni)
+  )
+```
+
+```{r}
+#| label: zobrazit-oblouk-residui-stromu
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 4
+#| fig-cap: "Residua aditivního modelu pro výšku stromů z předchozí lekce podle odhadnuté výšky. Oranžová křivka pouze vyhlazuje průběh bodů, aby byl vzor lépe vidět."
+#| fig-alt: "Bodový graf residuí proti odhadnuté výšce stromu. Body pro nízké a vysoké odhadnuté výšky leží převážně pod nulou, body uprostřed převážně nad nulou, takže vyhlazená křivka tvoří oblouk."
+ggplot2::ggplot(
+  data = data_residua_stromu,
+  mapping = ggplot2::aes(
+    x = odhadnuta_vyska,
+    y = residuum
+  )
+) +
+  ggplot2::geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    color = barva_text
+  ) +
+  ggplot2::geom_point(
+    color = barva_hlavni,
+    size = 2.2,
+    alpha = 0.8
+  ) +
+  ggplot2::geom_smooth(
+    method = "loess",
+    formula = y ~ x,
+    se = FALSE,
+    color = barva_cara,
+    linewidth = 1.1
+  ) +
+  ggplot2::labs(
+    x = "Odhadnutá výška stromu (m)",
+    y = "Residuum (m)"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+::: {.box-question title="Co residua říkají o přímce?"}
+Kde leží residua převážně nad nulou a kde pod nulou? Co by to znamenalo pro tvar vztahu mezi průměrem kmene a výškou stromu?
 :::
 
-::: {.box-data title="Doplňující: původ dat" collapse="true"}
-TODO: Původ dat, způsob měření nebo volitelný technický detail.
+U nejmenších a největších stromů leží residua převážně pod nulou, uprostřed nad nulou. Model tedy u krajních stromů výšku systematicky přeceňuje a u středně velkých podceňuje. **Takový oblouk v residuích naznačuje, že skutečný vztah je zakřivený, zatímco model předpokládá přímku.** Žádná z porovnávaných přímek tento vzor neodstranila. Zda a jak oblouk zmizí, zjistíme ve chvíli, kdy budeme umět měnit tvar vztahu; k těmto stromům se vrátíme na konci lekce.
+
+Předchozí lekce proto skončila otevřenou otázkou: co dělat, když žádný kandidát složený z přímek nestačí? Tato lekce na ni odpoví. Uvidíme, že `r render_glossary_term("linearni-model", display = "lineární model")` umí popsat i zakřivený vztah, pokud vhodně upravíme proměnné. Předtím se ale musíme naučit popisovat **tvar** — tvar `r render_glossary_term("rozdeleni", display = "rozdělení")` hodnot i tvar vztahu.
+
+# Co se v této lekci naučíte
+
+Po prostudování lekce budete umět:
+
+- popsat tvar `r render_glossary_term("rozdeleni", display = "rozdělení")` proměnné nebo `r render_glossary_term("residuum", display = "residuí")` pomocí `r render_glossary_term("histogram", display = "histogramu")` a `r render_glossary_term("qq-graf", display = "Q–Q grafu")` a posoudit, zda je tento tvar pro `r render_glossary_term("linearni-model", display = "lineární model")` podstatný;
+- rozlišit `r render_glossary_term("transformace", display = "transformace")`, které mění jen polohu a měřítko hodnot (změna jednotek, centrování, z-skóre), od transformací, které mění tvar (logaritmus, odmocnina);
+- rozpoznat zakřivený vztah v datech a navrhnout jednoduché řešení;
+- porovnat několik biologicky smysluplných tvarů vztahu jako kandidátní modely;
+- vysvětlit, jak transformace mění interpretaci koeficientů modelu.
+
+# Tvar rozdělení
+
+## Jeden řádek tabulky představuje jeden ostrov
+
+Budeme pracovat s klasickými daty o rostlinách Galapág, která publikovali M. P. Johnson a P. H. Raven (1973). Každý řádek tabulky představuje jeden ostrov. Pro každý ostrov známe:
+
+| Proměnná | Význam | Jednotka |
+|---|---|---|
+| `ostrov` | název ostrova | — |
+| `pocet_druhu` | počet druhů cévnatých rostlin | počet |
+| `pocet_endemitu` | počet druhů, které nerostou nikde jinde na světě | počet |
+| `plocha_km2` | plocha ostrova | km² |
+| `nejvyssi_bod_m` | nadmořská výška nejvyššího bodu ostrova | m n. m. |
+| `vzdalenost_nejblizsi_km` | vzdálenost k nejbližšímu ostrovu | km |
+| `vzdalenost_santa_cruz_km` | vzdálenost k ostrovu Santa Cruz | km |
+| `plocha_sousedniho_km2` | plocha nejbližšího sousedního ostrova | km² |
+
+: Proměnné ve výukové tabulce ostrovů Galapág.
+
+Hlavní `r render_glossary_term("odezva", display = "odezvou")` bude počet druhů rostlin a hlavním `r render_glossary_term("prediktor", display = "prediktorem")` plocha ostrova. Ostatní proměnné použijeme pro srovnání tvarů `r render_glossary_term("rozdeleni", display = "rozdělení")` a pro práci s různými jednotkami.
+
+```{r}
+#| label: nacist-data-ostrovu
+#| echo: true
+#| eval: true
+
+# Načteme připravenou výukovou tabulku
+data_ostrovy <-
+  read.csv(
+    file = here::here("data", "druhy_galapagy.csv"),
+    stringsAsFactors = FALSE
+  )
+```
+
+::: {.box-data title="Doplňující: původ dat a příprava tabulky" collapse="true"}
+Tabulka pochází z datasetu `galamiss` v balíčku [`faraway`](https://cran.r-project.org/package=faraway) verze 1.0.9 (J. Faraway), který je šířen pod licencí GPL. Hodnoty převzal z článku M. P. Johnson a P. H. Raven (1973): Species number and endemism: The Galapagos Archipelago revisited. *Science* 179: 893–895. Používáme verzi `galamiss`, která zachovává původní chybějící hodnoty. Sesterský dataset `gala` je pro pohodlí doplňuje, a proto jej nepoužíváme.
+
+Následující kód stáhne zdrojový balíček z archivu CRAN, ověří jeho otisk SHA-256, načte z něj tabulku bez instalace balíčku a uloží výukovou verzi s českými názvy proměnných. Řádky ani hodnoty nemění.
+
+```{r}
+#| label: reprodukovat-data-ostrovu
+#| echo: true
+#| eval: false
+
+# Stáhneme připnutou verzi zdrojového balíčku z archivu CRAN
+cesta_archiv <-
+  tempfile(fileext = ".tar.gz")
+
+download.file(
+  url = paste0(
+    "https://cran.r-project.org/src/contrib/Archive/",
+    "faraway/faraway_1.0.9.tar.gz"
+  ),
+  destfile = cesta_archiv,
+  mode = "wb"
+)
+
+# Ověříme, že jsme stáhli přesně očekávaný soubor
+stopifnot(
+  digest::digest(
+    object = cesta_archiv,
+    algo = "sha256",
+    file = TRUE
+  ) == paste0(
+    "1074ed85a0cf018fc2fd3e2a48bed666",
+    "b2fa06b8461b7a3820aeb67b34a52d5d"
+  )
+)
+
+# Rozbalíme z archivu jen soubor s daty
+cesta_slozka <- tempfile()
+
+untar(
+  tarfile = cesta_archiv,
+  files = "faraway/data/galamiss.rda",
+  exdir = cesta_slozka
+)
+
+# Načteme původní tabulku galamiss
+load(
+  file = file.path(
+    cesta_slozka,
+    "faraway",
+    "data",
+    "galamiss.rda"
+  )
+)
+
+# Názvy ostrovů jsou uložené jen jako názvy řádků bez mezer
+vec_nazvy_ostrovu <-
+  gsub(
+    pattern = "\\.",
+    replacement = " ",
+    x = rownames(galamiss)
+  )
+
+vec_nazvy_ostrovu <-
+  gsub(
+    pattern = "([a-z])([A-Z0-9])",
+    replacement = "\\1 \\2",
+    x = vec_nazvy_ostrovu
+  )
+
+# Sestavíme výukovou tabulku s českými názvy proměnných
+data_ostrovy_priprava <-
+  data.frame(
+    ostrov = vec_nazvy_ostrovu,
+    pocet_druhu = as.integer(galamiss$Species),
+    pocet_endemitu = as.integer(galamiss$Endemics),
+    plocha_km2 = galamiss$Area,
+    nejvyssi_bod_m = galamiss$Elevation,
+    vzdalenost_nejblizsi_km = galamiss$Nearest,
+    vzdalenost_santa_cruz_km = galamiss$Scruz,
+    plocha_sousedniho_km2 = galamiss$Adjacent
+  )
+
+# Uložíme tabulku; chybějící hodnoty zůstanou prázdné
+write.csv(
+  x = data_ostrovy_priprava,
+  file = here::here("data", "druhy_galapagy.csv"),
+  row.names = FALSE,
+  na = ""
+)
+```
+
+Kód potřebuje balíček `digest`. Stejný postup obsahuje skript `R/prepare_galapagos_data.R` v repozitáři lekce.
 :::
 
-::: {.box-extra title="Doplňující: dlouhý technický postup" collapse="true"}
-TODO: Delší volitelný technický nebo reprodukční postup. V HTML zůstává sbalený; v PDF se obsah přirozeně rozloží přes více stran.
+## Co v tabulce chybí a co je neobvyklé?
+
+Než začneme cokoli modelovat, tabulku prohlédneme. Zajímá nás struktura `r render_glossary_term("promenna", display = "proměnných")`, chybějící hodnoty a rozsahy, které by mohly prozradit chybu nebo neobvyklé `r render_glossary_term("pozorovani", display = "pozorování")`.
+
+```{r}
+#| label: prohlednout-data-ostrovu
+#| echo: true
+#| eval: true
+
+# Prohlédneme první řádky tabulky
+head(
+  x = data_ostrovy,
+  n = 6
+)
+
+# Ověříme datové typy proměnných
+str(object = data_ostrovy)
+
+# Spočítáme chybějící hodnoty v každém sloupci
+colSums(x = is.na(data_ostrovy))
+
+# Zkontrolujeme rozsahy hlavních proměnných
+range(x = data_ostrovy$pocet_druhu)
+range(x = data_ostrovy$plocha_km2)
+```
+
+```{r}
+#| label: najit-neobvykle-hodnoty
+#| echo: false
+pocet_ostrovu <- nrow(data_ostrovy)
+
+pocet_chybejicich_vysek <-
+  sum(is.na(data_ostrovy$nejvyssi_bod_m))
+
+ostrov_nulova_vzdalenost <-
+  data_ostrovy$ostrov[data_ostrovy$vzdalenost_santa_cruz_km == 0]
+
+ostrov_bez_endemitu <-
+  data_ostrovy$ostrov[data_ostrovy$pocet_endemitu == 0]
+
+plocha_min <- min(data_ostrovy$plocha_km2)
+plocha_max <- max(data_ostrovy$plocha_km2)
+ostrov_plocha_max <-
+  data_ostrovy$ostrov[which.max(data_ostrovy$plocha_km2)]
+```
+
+Tabulka obsahuje `r pocet_ostrovu` ostrovů. Počty druhů i plochy jsou kompletní; nejvyšší bod chybí u `r pocet_chybejicich_vysek` ostrovů. Při prohlídce si všimneme tří věcí:
+
+- **Plochy ostrovů se liší extrémně.** Nejmenší ostrov má `r plocha_min` km², největší ostrov `r ostrov_plocha_max` `r formatC(plocha_max, format = "f", digits = 0, big.mark = " ")` km². Největší ostrov je tedy zhruba `r formatC(plocha_max / plocha_min, format = "f", digits = 0, big.mark = " ")`krát větší než nejmenší.
+- **Ostrov `r ostrov_nulova_vzdalenost` má vzdálenost k ostrovu Santa Cruz rovnou nule**, protože jde o tentýž ostrov. Hodnota není chybou, ale je to skutečná nula; bude důležitá, až budeme hodnoty logaritmovat.
+- **Ostrov `r ostrov_bez_endemitu` nemá žádný endemický druh.** Také tato nula je skutečná hodnota.
+
+Záporné hodnoty ani zjevné chyby jednotek v tabulce nevidíme. Počty a plochy jsou biologicky věrohodné.
+
+## Jak vypadají počty druhů a plochy ostrovů?
+
+`r render_glossary_term("rozdeleni", display = "Rozdělení")` číselné proměnné nejrychleji uvidíme v `r render_glossary_term("histogram", display = "histogramu")` (anglicky *histogram*). Vodorovná osa ukazuje hodnoty proměnné rozdělené do košů, svislá osa `r render_glossary_term("cetnost", display = "četnost")` ostrovů v každém koši.
+
+```{r}
+#| label: histogram-pocet-druhu
+#| echo: true
+#| eval: true
+#| fig-cap: !expr 'paste0("Histogram počtu druhů rostlin na ", nrow(data_ostrovy), " ostrovech.")'
+#| fig-alt: "Histogram počtu druhů. Většina ostrovů má méně než sto druhů, několik ostrovů má dvě stě až čtyři sta padesát druhů."
+
+# Zobrazíme rozdělení počtu druhů
+hist(
+  x = data_ostrovy$pocet_druhu,
+  breaks = 15,
+  col = "#86579E",
+  border = "white",
+  main = "",
+  xlab = "Počet druhů rostlin",
+  ylab = "Počet ostrovů"
+)
+```
+
+```{r}
+#| label: histogram-plocha
+#| echo: true
+#| eval: true
+#| fig-cap: !expr 'paste0("Histogram plochy ", nrow(data_ostrovy), " ostrovů.")'
+#| fig-alt: "Histogram plochy ostrovů. Téměř všechny ostrovy leží v prvním koši u nuly, několik ojedinělých ostrovů má plochu stovky až tisíce kilometrů čtverečních."
+
+# Zobrazíme rozdělení plochy ostrovů
+hist(
+  x = data_ostrovy$plocha_km2,
+  breaks = 15,
+  col = "#86579E",
+  border = "white",
+  main = "",
+  xlab = "Plocha ostrova (km²)",
+  ylab = "Počet ostrovů"
+)
+```
+
+::: {.box-question title="Kde leží většina ostrovů?"}
+Kde v obou `r render_glossary_term("histogram", display = "histogramech")` leží většina ostrovů? Co s obrázkem dělá několik největších ostrovů?
 :::
 
-::: {.box-rule title="Pravidlo pro interpretaci"}
-TODO: Definice, rozhodovací pravidlo nebo dlouhodobě použitelná pomůcka.
+```{r}
+#| label: spocitat-male-ostrovy
+#| echo: false
+hranice_maly_ostrov_km2 <- 10
+hranice_malo_druhu <- 100
+
+pocet_malych_ostrovu <-
+  sum(data_ostrovy$plocha_km2 < hranice_maly_ostrov_km2)
+
+pocet_ostrovu_malo_druhu <-
+  sum(data_ostrovy$pocet_druhu < hranice_malo_druhu)
+```
+
+Většina ostrovů je malá a má málo druhů: `r pocet_malych_ostrovu` z `r pocet_ostrovu` ostrovů má plochu menší než `r hranice_maly_ostrov_km2` km² a `r pocet_ostrovu_malo_druhu` ostrovů má méně než `r hranice_malo_druhu` druhů. Několik velkých ostrovů vytváří na pravé straně histogramu dlouhý řídký „ocas“. U plochy je to extrémní: téměř všechny ostrovy se vejdou do prvního koše a celý zbytek osy zabírá jen hrstka obrů. **Histogram plochy tak o malých ostrovech neříká téměř nic.**
+
+## Jak popsat tvar rozdělení slovy?
+
+Pro takové obrázky potřebujeme slova. Tvar `r render_glossary_term("rozdeleni", display = "rozdělení")` popisujeme podle několika vlastností:
+
+- **Souměrnost.** Levá a pravá polovina rozdělení vypadají přibližně jako zrcadlový obraz.
+- **Šikmost** (anglicky *skewness*). Rozdělení má jeden ocas delší než druhý. Rozdělení s dlouhým ocasem vpravo nazýváme **pravostranně šikmé** (*right-skewed*), s dlouhým ocasem vlevo **levostranně šikmé** (*left-skewed*). Šikmost pojmenováváme podle strany dlouhého ocasu, nikoli podle strany, kde leží většina hodnot.
+- **Těžké konce** (*heavy tails*). Rozdělení je souměrné, ale velmi vzdálené hodnoty na obou stranách se objevují častěji, než bychom u souměrného zvonovitého tvaru čekali (tento referenční tvar pojmenujeme o několik kapitol dál). Stejnou vlastnost jsme v lekci o testování hypotéz popsali u t-rozdělení s malým počtem stupňů volnosti jako **těžší chvosty**.
+- **Vícevrcholovost** (*multimodality*). Rozdělení má dva nebo více vrcholů, například proto, že data obsahují dvě odlišné skupiny. Tak tomu bylo u délek erupcí gejzíru Old Faithful, které tvořily skupinu krátkých a skupinu dlouhých erupcí.
+- **Omezení hodnot.** Některé veličiny nemohou klesnout pod nulu (plocha, počet, hmotnost) nebo leží mezi nulou a jedničkou (podíly). Hranice často tvar rozdělení ovlivňuje.
+
+```{r}
+#| label: nastavit-velikost-galerie
+#| echo: false
+pocet_simulovanych_hodnot <- 300
+```
+
+Abychom tvary viděli čistě, připravili jsme pět **simulovaných** souborů po `r pocet_simulovanych_hodnot` hodnotách. Nejde o skutečná měření; každý soubor jsme vytvořili tak, aby měl jeden typický tvar.
+
+```{r}
+#| label: simulovat-galerii-tvaru
+#| echo: false
+set.seed(seed_kurz)
+
+data_galerie_tvaru <-
+  tibble::tibble(
+    tvar = rep(
+      x = c(
+        "dva vrcholy",
+        "pravostranně šikmé",
+        "souměrné",
+        "těžké konce",
+        "levostranně šikmé"
+      ),
+      each = pocet_simulovanych_hodnot
+    ),
+    hodnota = c(
+      c(
+        stats::rnorm(n = pocet_simulovanych_hodnot / 2, mean = 40, sd = 5),
+        stats::rnorm(n = pocet_simulovanych_hodnot / 2, mean = 70, sd = 5)
+      ),
+      stats::rlnorm(n = pocet_simulovanych_hodnot, meanlog = 3, sdlog = 0.6),
+      stats::rnorm(n = pocet_simulovanych_hodnot, mean = 50, sd = 10),
+      50 + 6 * stats::rt(n = pocet_simulovanych_hodnot, df = 3),
+      100 - stats::rlnorm(n = pocet_simulovanych_hodnot, meanlog = 3, sdlog = 0.6)
+    )
+  ) |>
+  dplyr::mutate(
+    pismeno = factor(
+      x = as.character(match(tvar, unique(tvar))),
+      levels = as.character(1:5)
+    ),
+    tvar = factor(
+      x = tvar,
+      levels = c(
+        "souměrné",
+        "pravostranně šikmé",
+        "levostranně šikmé",
+        "těžké konce",
+        "dva vrcholy"
+      )
+    )
+  )
+```
+
+```{r}
+#| label: zobrazit-galerii-tvaru
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 9
+#| fig-height: 4.6
+#| fig-cap: "Pět simulovaných rozdělení 1–5. Každý panel má vlastní vodorovnou osu."
+#| fig-alt: "Pět histogramů označených 1 až 5. Panel 1 má dva oddělené vrcholy. Panel 2 má vrchol vlevo a dlouhý ocas vpravo. Panel 3 je souměrný zvon. Panel 4 je úzký souměrný vrchol s ojedinělými vzdálenými hodnotami na obou stranách. Panel 5 má vrchol vpravo a dlouhý ocas vlevo."
+ggplot2::ggplot(
+  data = data_galerie_tvaru,
+  mapping = ggplot2::aes(x = hodnota)
+) +
+  ggplot2::geom_histogram(
+    bins = 25,
+    fill = "#86579E",
+    color = "white"
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(pismeno),
+    scales = "free",
+    nrow = 2
+  ) +
+  ggplot2::labs(
+    x = "Simulovaná hodnota",
+    y = "Četnost"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+::: {.box-question title="Přiřaďte tvary"}
+Přiřaďte panelům 1–5 slova *souměrné*, *pravostranně šikmé*, *levostranně šikmé*, *těžké konce* a *dva vrcholy*.
 :::
 
-::: {.box-warning title="Pozor na častou chybu"}
-TODO: Mylná interpretace nebo metodologické varování.
+::: {.box-result title="Řešení" collapse="true"}
+1 = dva vrcholy, 2 = pravostranně šikmé, 3 = souměrné, 4 = těžké konce, 5 = levostranně šikmé. Panel 4 se od panelu 3 liší hlavně ojedinělými hodnotami daleko od středu; jeho střed je naopak užší.
 :::
 
-## Shrnutí
+Počet druhů i plocha ostrovů jsou tedy **pravostranně šikmé**: většina hodnot leží vlevo a dlouhý ocas míří doprava. U plochy je šikmost extrémní.
 
-TODO: Klíčové body k zapamatování.
+```{r}
+#| label: porovnat-prumer-a-median
+#| echo: false
+prumer_druhu <- mean(data_ostrovy$pocet_druhu)
+median_druhu <- median(data_ostrovy$pocet_druhu)
+prumer_plochy <- mean(data_ostrovy$plocha_km2)
+median_plochy <- median(data_ostrovy$plocha_km2)
+```
 
-- TODO: bod 1
-- TODO: bod 2
-- TODO: bod 3
+Šikmost poznáme i bez obrázku, porovnáním `r render_glossary_term("prumer", display = "průměru")` a `r render_glossary_term("median", display = "mediánu")`. V první lekci jsme u tělesné hmotnosti savců viděli, že dlouhý ocas táhne průměr k sobě, zatímco medián zůstává uprostřed seřazených hodnot. Tehdy jsme taková data nazývali „výrazně asymetrická“; přesnější název je **pravostranně šikmá**. Průměrný počet druhů je `r formatC(prumer_druhu, format = "f", digits = 1)`, medián jen `r median_druhu`. Průměrná plocha je `r formatC(prumer_plochy, format = "f", digits = 1)` km², medián `r median_plochy` km². **Průměr plochy tak popisuje ostrov, jakých je v souostroví jen několik.**
 
-## Slovníček pojmů {.unnumbered}
+::: {.box-data title="Doplňující: Jak šikmost vyjádřit jedním číslem?" collapse="true"}
+Šikmost lze shrnout jedním číslem, **koeficientem šikmosti**. Pro každou hodnotu spočítáme odchylku od průměru, vydělíme ji `r render_glossary_term("smerodatna-odchylka", display = "směrodatnou odchylkou")` a výsledek umocníme na třetí. Třetí mocnina zachová znaménko, takže dlouhý ocas vpravo převáží kladnými hodnotami a dlouhý ocas vlevo zápornými. Koeficient je průměr těchto třetích mocnin:
+
+$$
+\text{koeficient šikmosti} =
+\text{průměr z }\left(\frac{\text{hodnota} - \text{průměr}}{\text{směrodatná odchylka}}\right)^3.
+$$
+
+```{r}
+#| label: spocitat-sikmost
+#| echo: true
+#| eval: true
+
+# Koeficient šikmosti počtu druhů
+vec_druhy <- data_ostrovy$pocet_druhu
+
+mean(
+  x = ((vec_druhy - mean(x = vec_druhy)) / sd(x = vec_druhy))^3
+)
+```
+
+```{r}
+#| label: spocitat-sikmost-tabulka
+#| echo: false
+data_sikmost <-
+  tibble::tibble(
+    promenna = c(
+      "Počet druhů",
+      "Plocha ostrova",
+      "Nejvyšší bod"
+    ),
+    sikmost = purrr::map_dbl(
+      .x = list(
+        data_ostrovy$pocet_druhu,
+        data_ostrovy$plocha_km2,
+        stats::na.omit(data_ostrovy$nejvyssi_bod_m)
+      ),
+      .f = ~ mean(((.x - mean(.x)) / stats::sd(.x))^3)
+    )
+  )
+
+knitr::kable(
+  x = data_sikmost,
+  digits = 2,
+  col.names = c("Proměnná", "Koeficient šikmosti"),
+  caption = "Koeficient šikmosti tří proměnných ostrovů."
+)
+```
+
+Kladné hodnoty odpovídají pravostranné šikmosti, záporné levostranné, hodnoty blízko nuly přibližně souměrnému tvaru. Číslo je užitečné pro stručný popis, **ale neexistuje hranice, od které by šikmost „vadila“**. O tom, zda tvar pro model něco znamená, rozhoduje graf, otázka a to, kterých hodnot se tvar týká. V literatuře najdete i varianty vzorce, které se pro malé vzorky mírně liší.
+:::
+
+## Proč je tolik biologických veličin pravostranně šikmých?
+
+Pravostranná šikmost není u biologických dat výjimkou, ale pravidlem. Plochy, hmotnosti, koncentrace, velikosti populací nebo počty druhů bývají šikmé ze dvou důvodů.
+
+**Hranice v nule.** Plocha ani počet druhů nemohou být záporné. Když je většina hodnot blízko nule, `r render_glossary_term("rozdeleni", display = "rozdělení")` se nemá kam rozšířit doleva, ale doprava ano.
+
+```{r}
+#| label: nastavit-simulaci-populaci
+#| echo: false
+pocet_populaci <- 1000
+pocet_kroku <- 20
+pocatecni_velikost <- 300
+```
+
+**Růst násobením.** Mnoho biologických procesů nepřičítá stále stejný přírůstek, ale násobí. Populace roste o určité procento, buňka se dělí, strom přirůstá úměrně své velikosti. Simulace v následujícím obrázku ukazuje rozdíl. Celkem `r pocet_populaci` simulovaných populací začíná na stejné velikosti a `r pocet_kroku`krát se změní. Vlevo se v každém kroku k velikosti přičte náhodný přírůstek, vpravo se velikost vynásobí náhodným faktorem.
+
+```{r}
+#| label: simulovat-scitani-a-nasobeni
+#| echo: false
+set.seed(seed_kurz)
+
+matice_pricitani <-
+  matrix(
+    data = stats::rnorm(n = pocet_populaci * pocet_kroku, mean = 0, sd = 15),
+    nrow = pocet_populaci
+  )
+
+matice_nasobeni <-
+  matrix(
+    data = exp(stats::rnorm(n = pocet_populaci * pocet_kroku, mean = 0, sd = 0.15)),
+    nrow = pocet_populaci
+  )
+
+data_scitani_nasobeni <-
+  tibble::tibble(
+    proces = rep(
+      x = c(
+        "Přičítání náhodných přírůstků",
+        "Násobení náhodnými faktory"
+      ),
+      each = pocet_populaci
+    ),
+    velikost = c(
+      pocatecni_velikost + rowSums(matice_pricitani),
+      pocatecni_velikost * apply(X = matice_nasobeni, MARGIN = 1, FUN = prod)
+    )
+  ) |>
+  dplyr::mutate(
+    proces = factor(
+      x = proces,
+      levels = c(
+        "Přičítání náhodných přírůstků",
+        "Násobení náhodnými faktory"
+      )
+    )
+  )
+```
+
+```{r}
+#| label: zobrazit-scitani-a-nasobeni
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 9
+#| fig-height: 3.8
+#| fig-cap: !expr 'paste0("Simulované velikosti ", pocet_populaci, " populací po ", pocet_kroku, " náhodných změnách. Vlevo se přírůstky přičítají, vpravo se velikost násobí.")'
+#| fig-alt: "Dva histogramy. Levý je souměrný zvon kolem počáteční velikosti. Pravý má vrchol vlevo od počáteční velikosti a dlouhý ocas vpravo."
+ggplot2::ggplot(
+  data = data_scitani_nasobeni,
+  mapping = ggplot2::aes(x = velikost)
+) +
+  ggplot2::geom_histogram(
+    bins = 40,
+    fill = "#86579E",
+    color = "white"
+  ) +
+  ggplot2::geom_vline(
+    xintercept = pocatecni_velikost,
+    linetype = "dashed",
+    color = barva_text
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(proces),
+    scales = "free"
+  ) +
+  ggplot2::labs(
+    x = "Velikost populace po 20 krocích (simulace)",
+    y = "Počet populací"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Když se sčítá mnoho malých náhodných vlivů, kladné a záporné přírůstky se navzájem vyrovnávají a vzniká souměrný zvon. Když se náhodné vlivy násobí, populace, které už jsou velké, rostou ve stejných procentech o mnohem více jedinců než malé. Několik populací proto uteče daleko doprava a vznikne pravostranně šikmé rozdělení.
+
+Na Galapágách se na šikmosti plochy podílí hlavně hranice v nule: malých ostrůvků a skalek je mnoho, velkých sopečných ostrovů jen několik a plocha nemůže klesnout pod nulu. Šikmý počet druhů pak zčásti kopíruje šikmou plochu, protože větší ostrovy nabízejí více prostředí pro více druhů. **Šikmost tedy sama o sobě není chybou dat. Je to vlastnost biologie, kterou musíme znát a zohlednit při volbě modelu.**
+
+## K čemu slouží normální rozdělení?
+
+Souměrný zvon z levého panelu simulace už známe. V předchozích lekcích jsme jej používali jako referenční tvar v `r render_glossary_term("qq-graf", display = "Q–Q grafech")` `r render_glossary_term("residuum", display = "residuí")` a podobný tvar má také t-`r render_glossary_term("rozdeleni", display = "rozdělení")`, ze kterého jsme počítali `r render_glossary_term("p-hodnota", display = "p-hodnoty")` a `r render_glossary_term("interval-spolehlivosti", display = "intervaly spolehlivosti")`. Tento zvonovitý tvar se nazývá **normální rozdělení** (anglicky *normal distribution*, také Gaussovo rozdělení).
+
+
+```{r}
+#| label: zobrazit-normalni-rozdeleni
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 3.8
+#| fig-cap: "Simulovaný souměrný soubor 3 z galerie tvarů a křivka normálního rozdělení se stejným průměrem a směrodatnou odchylkou."
+#| fig-alt: "Histogram souměrného simulovaného souboru, přes který je položena hladká zvonovitá křivka normálního rozdělení. Sloupce křivku těsně sledují."
+data_soumerny_tvar <-
+  data_galerie_tvaru |>
+  dplyr::filter(tvar == "souměrné")
+
+ggplot2::ggplot(
+  data = data_soumerny_tvar,
+  mapping = ggplot2::aes(x = hodnota)
+) +
+  ggplot2::geom_histogram(
+    mapping = ggplot2::aes(y = ggplot2::after_stat(density)),
+    bins = 25,
+    fill = "#86579E",
+    color = "white"
+  ) +
+  ggplot2::stat_function(
+    fun = stats::dnorm,
+    args = list(
+      mean = mean(data_soumerny_tvar$hodnota),
+      sd = stats::sd(data_soumerny_tvar$hodnota)
+    ),
+    color = barva_cara,
+    linewidth = 1.2
+  ) +
+  ggplot2::labs(
+    x = "Simulovaná hodnota",
+    y = "Hustota"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Normální rozdělení je souměrné a má jeden vrchol. Jeho tvar určují jen dvě čísla, která známe už z první lekce: `r render_glossary_term("prumer", display = "průměr")` a `r render_glossary_term("smerodatna-odchylka", display = "směrodatná odchylka")` (SD). **Průměr říká, kde leží střed zvonu. SD říká, jak je zvon široký.**
+
+```{r}
+#| label: zobrazit-prumer-a-sd-normalniho-rozdeleni
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 9
+#| fig-height: 3.6
+#| fig-cap: "Normální rozdělení s různými průměry a směrodatnými odchylkami. Vlevo stejný průměr a různá SD, vpravo stejná SD a různý průměr."
+#| fig-alt: "Dva panely s hladkými zvonovitými křivkami. Vlevo mají dvě křivky střed na stejném místě, jedna je úzká a vysoká, druhá široká a nízká. Vpravo mají dvě křivky stejný tvar, ale jedna je posunutá doprava."
+vec_poradi_panelu_normal <-
+  c(
+    "Stejný průměr, různá SD",
+    "Stejná SD, různý průměr"
+  )
+
+data_normalni_krivky <-
+  tidyr::expand_grid(
+    x = seq(from = 0, to = 100, length.out = 400),
+    tibble::tibble(
+      panel = rep(x = vec_poradi_panelu_normal, each = 2),
+      krivka = c(
+        "průměr 50, SD 5",
+        "průměr 50, SD 15",
+        "průměr 40, SD 8",
+        "průměr 65, SD 8"
+      ),
+      popisek = c("SD 5", "SD 15", "průměr 40", "průměr 65"),
+      prumer = c(50, 50, 40, 65),
+      sd = c(5, 15, 8, 8)
+    )
+  ) |>
+  dplyr::mutate(
+    hustota = stats::dnorm(x = x, mean = prumer, sd = sd),
+    panel = factor(x = panel, levels = vec_poradi_panelu_normal)
+  )
+
+ggplot2::ggplot(
+  data = data_normalni_krivky,
+  mapping = ggplot2::aes(
+    x = x,
+    y = hustota,
+    color = krivka
+  )
+) +
+  ggplot2::geom_line(linewidth = 1.2) +
+  ggplot2::geom_text(
+    data = data_normalni_krivky |>
+      dplyr::filter(abs(x - prumer) == min(abs(x - prumer)), .by = krivka),
+    mapping = ggplot2::aes(label = popisek),
+    vjust = -0.5,
+    size = 3.4,
+    show.legend = FALSE
+  ) +
+  ggplot2::facet_wrap(facets = ggplot2::vars(panel)) +
+  ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.15))) +
+  ggplot2::scale_color_manual(
+    values = c(
+      "průměr 50, SD 5" = barva_hlavni,
+      "průměr 50, SD 15" = barva_cara,
+      "průměr 40, SD 8" = barva_hlavni,
+      "průměr 65, SD 8" = barva_cara
+    )
+  ) +
+  ggplot2::labs(
+    x = "Hodnota",
+    y = "Hustota"
+  ) +
+  ggplot2::theme_bw(base_size = 12) +
+  ggplot2::theme(legend.position = "none")
+```
+
+Změna průměru posune celý zvon doleva nebo doprava, aniž by změnila jeho tvar. Větší SD zvon roztáhne do šířky, a protože plocha pod křivkou zůstává stejná, zvon zároveň sníží. Hodnoty daleko od středu jsou u normálního rozdělení vzácné. Jak vzácné, můžeme vyjádřit právě v jednotkách SD.
+
+::: {.box-question title="Kolik hodnot leží blízko průměru?"}
+Představte si přibližně normální veličinu, například délku křídla u velkého vzorku ptáků jednoho druhu. Kolik procent jedinců odhadujete, že bude mít délku křídla nejvýš o jednu SD menší nebo větší než průměr? A kolik do dvou SD?
+:::
+
+```{r}
+#| label: spocitat-podily-normalniho-rozdeleni
+#| echo: false
+podil_1_sd <- stats::pnorm(1) - stats::pnorm(-1)
+podil_2_sd <- stats::pnorm(2) - stats::pnorm(-2)
+podil_3_sd <- stats::pnorm(3) - stats::pnorm(-3)
+
+prumer_soumerny <- mean(data_soumerny_tvar$hodnota)
+sd_soumerny <- stats::sd(data_soumerny_tvar$hodnota)
+
+podil_simulace_1_sd <-
+  mean(abs(data_soumerny_tvar$hodnota - prumer_soumerny) <= sd_soumerny)
+podil_simulace_2_sd <-
+  mean(abs(data_soumerny_tvar$hodnota - prumer_soumerny) <= 2 * sd_soumerny)
+
+format_procenta <- scales::label_percent(accuracy = 1)
+format_procenta_desetina <- scales::label_percent(accuracy = 0.1)
+
+data_pasma_sd <-
+  tibble::tibble(
+    x = seq(
+      from = prumer_soumerny - 4 * sd_soumerny,
+      to = prumer_soumerny + 4 * sd_soumerny,
+      length.out = 600
+    )
+  ) |>
+  dplyr::mutate(
+    hustota = stats::dnorm(x = x, mean = prumer_soumerny, sd = sd_soumerny),
+    vzdalenost_sd = abs(x - prumer_soumerny) / sd_soumerny,
+    pasmo = dplyr::case_when(
+      vzdalenost_sd <= 1 ~ "do 1 SD od průměru",
+      vzdalenost_sd <= 2 ~ "1 až 2 SD od průměru",
+      TRUE ~ "dál než 2 SD"
+    ),
+    pasmo = factor(
+      x = pasmo,
+      levels = c("do 1 SD od průměru", "1 až 2 SD od průměru", "dál než 2 SD")
+    ),
+    usek = paste(pasmo, x >= prumer_soumerny)
+  )
+
+data_znacky_sd <-
+  tibble::tibble(
+    pozice = prumer_soumerny + (-2:2) * sd_soumerny,
+    popisek = c("průměr
+− 2 SD", "průměr
+− 1 SD", "průměr", "průměr
++ 1 SD", "průměr
++ 2 SD")
+  )
+```
+
+```{r}
+#| label: zobrazit-pasma-sd
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 8.5
+#| fig-height: 4
+#| fig-cap: "Normální rozdělení se stejným průměrem a SD jako simulovaný souměrný soubor 3. Barva ukazuje, jak daleko od průměru hodnoty leží, měřeno v SD."
+#| fig-alt: "Zvonovitá křivka rozdělená svislými čarami na pásma. Nejtmavší pásmo kolem průměru zahrnuje většinu plochy, dvě světlejší pásma po stranách menší část a okraje za dvěma SD jen malý zbytek."
+ggplot2::ggplot(
+  data = data_pasma_sd,
+  mapping = ggplot2::aes(x = x, y = hustota)
+) +
+  ggplot2::geom_ribbon(
+    mapping = ggplot2::aes(ymin = 0, ymax = hustota, fill = pasmo, group = usek)
+  ) +
+  ggplot2::geom_line(color = barva_text, linewidth = 0.8) +
+  ggplot2::geom_vline(
+    data = data_znacky_sd,
+    mapping = ggplot2::aes(xintercept = pozice),
+    linetype = "dashed",
+    color = barva_text
+  ) +
+  ggplot2::scale_x_continuous(
+    breaks = data_znacky_sd$pozice,
+    labels = data_znacky_sd$popisek
+  ) +
+  ggplot2::scale_fill_manual(
+    values = c(
+      "do 1 SD od průměru" = barva_hlavni,
+      "1 až 2 SD od průměru" = "#86579E",
+      "dál než 2 SD" = barva_doplnkova
+    )
+  ) +
+  ggplot2::labs(
+    x = NULL,
+    y = "Hustota",
+    fill = NULL
+  ) +
+  ggplot2::theme_bw(base_size = 11) +
+  ggplot2::theme(legend.position = "bottom")
+```
+
+::: {.box-rule title="Průměr a SD u normálního rozdělení"}
+- Přibližně `r format_procenta(podil_1_sd)` hodnot leží nejvýš **jednu SD** od průměru.
+- Přibližně `r format_procenta(podil_2_sd)` hodnot leží nejvýš **dvě SD** od průměru.
+- Přibližně `r format_procenta_desetina(podil_3_sd)` hodnot leží nejvýš **tři SD** od průměru; vzdálenější hodnoty jsou u normálního rozdělení velmi vzácné.
+:::
+
+V simulovaném souměrném souboru 3 leží do jedné SD od průměru `r format_procenta(podil_simulace_1_sd)` hodnot a do dvou SD `r format_procenta(podil_simulace_2_sd)` hodnot, tedy blízko pravidlu; v souboru o `r nrow(data_soumerny_tvar)` hodnotách se podíly od teoretických trochu liší náhodou. Podobnou myšlenku jsme použili u intervalů spolehlivosti. Odhady sklonu z opakovaných výběrů kolísaly kolem skutečné hodnoty přibližně zvonovitě a jejich „směrodatnou odchylkou“ byla standardní chyba. Proto 95% interval sahal od odhadu přibližně dvě standardní chyby na každou stranu (přesněji o kritickou hodnotu t, u malých souborů o něco větší než 2). Interval tedy nepokrývá 95 % pozorování; s 95% spolehlivostí zachycuje skutečnou hodnotu sklonu.
+
+```{r}
+#| label: prumer-sd-u-sikme-plochy
+#| echo: false
+sd_plochy_ostrovu <- stats::sd(data_ostrovy$plocha_km2)
+dolni_mez_plochy <- prumer_plochy - sd_plochy_ostrovu
+podil_ostrovu_1_sd <-
+  mean(abs(data_ostrovy$plocha_km2 - prumer_plochy) <= sd_plochy_ostrovu)
+```
+
+**U šikmých dat toto pravidlo neplatí.** Průměrná plocha ostrovů je `r formatC(prumer_plochy, format = "f", digits = 1)` km² a SD `r formatC(sd_plochy_ostrovu, format = "f", digits = 1)` km². Průměr minus jedna SD dává `r formatC(dolni_mez_plochy, format = "f", digits = 1)` km², tedy zápornou plochu, která nemůže existovat. Do jedné SD od průměru přitom padá `r format_procenta(podil_ostrovu_1_sd)` ostrovů místo přibližně `r format_procenta(podil_1_sd)`. Dvojice průměr a SD tedy dobře popisuje hlavně přibližně souměrná data; proto jsme v první lekci u výrazně asymetrických dat doporučili medián a mezikvartilové rozpětí.
+
+**Normální rozdělení je užitečné měřítko, nikoli výchozí vlastnost biologických dat.** Jak jsme viděli, mnoho biologických veličin normální není a ani být nemá. Normální rozdělení potřebujeme proto, že s ním `r render_glossary_term("linearni-model", display = "lineární model")` počítá u jedné konkrétní části modelu. Kterou částí to je, zjistíme v další kapitole.
+
+## Jak se tvar rozdělení projeví v Q–Q grafu?
+
+`r render_glossary_term("histogram", display = "Histogram")` je názorný, ale u malého počtu `r render_glossary_term("pozorovani", display = "pozorování")` silně závisí na volbě šířky koše (anglicky *bin width*), jak jsme viděli v první lekci. Proto jsme při kontrole `r render_glossary_term("residuum", display = "residuí")` používali `r render_glossary_term("qq-graf", display = "Q–Q graf")` (anglicky *quantile–quantile plot*). Ten porovnává seřazené hodnoty s `r render_glossary_term("kvantil", display = "kvantily")`, které bychom čekali u normálního rozdělení. Pokud mají data normální tvar, body leží přibližně na přímce. Každý jiný tvar má svůj typický vzor odchylek.
+
+```{r}
+#| label: zobrazit-qq-galerii
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 9
+#| fig-height: 5.2
+#| fig-cap: "Q–Q grafy stejných pěti simulovaných souborů jako v galerii tvarů, nyní seřazené podle názvu tvaru. Přímka prochází prvním a třetím kvartilem."
+#| fig-alt: "Pět Q–Q grafů. U souměrného tvaru leží body na přímce. U pravostranně šikmého se body vpravo zvedají nad přímku do oblouku. U levostranně šikmého se body vlevo propadají pod přímku. U těžkých konců se body na obou koncích odklánějí od přímky opačným směrem. U dvou vrcholů tvoří body schod."
+ggplot2::ggplot(
+  data = data_galerie_tvaru,
+  mapping = ggplot2::aes(sample = hodnota)
+) +
+  ggplot2::stat_qq(
+    color = barva_hlavni,
+    size = 1,
+    alpha = 0.6
+  ) +
+  ggplot2::stat_qq_line(
+    color = barva_cara,
+    linewidth = 1
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(tvar),
+    scales = "free_y",
+    nrow = 2
+  ) +
+  ggplot2::labs(
+    x = "Teoretický kvantil normálního rozdělení",
+    y = "Seřazená simulovaná hodnota"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+::: {.box-question title="Najděte typický vzor"}
+Porovnejte Q–Q grafy s histogramy v galerii tvarů. Jak se v Q–Q grafu projeví dlouhý ocas vpravo? A jak dva vrcholy?
+:::
+
+::: {.box-rule title="Jak číst odchylky v Q–Q grafu"}
+- **Souměrné, přibližně normální:** body leží blízko přímky, jen na krajích mírně kolísají.
+- **Pravostranně šikmé:** body vpravo nahoře se zvedají nad přímku a celý graf se prohne do oblouku. Největší hodnoty jsou mnohem větší, než by normální rozdělení čekalo.
+- **Levostranně šikmé:** zrcadlový obraz; body vlevo dole klesají pod přímku.
+- **Těžké konce:** body na obou koncích se od přímky odklánějí opačnými směry, levý dolů a pravý nahoru, takže graf připomíná natažené písmeno S.
+- **Dva vrcholy:** body tvoří schod, protože mezi dvěma skupinami je méně hodnot, než by normální rozdělení čekalo.
+:::
+
+I u dokonale normálních dat body kolem přímky trochu kolísají, nejvíce na krajích. S malým počtem pozorování je toto kolísání větší. Proto hledáme **systematický vzor**, ne jednotlivé body mimo přímku.
+
+Nový slovník pomáhá přečíst i grafy z předchozích lekcí. U residuí kosatců v lekci o první přímce se oba konce Q–Q grafu mírně odkláněly opačnými směry: residua měla **slabě těžké konce**.
+
+# Co lineární model předpokládá
+
+## Jak počet druhů popíše přímka?
+
+Vraťme se k hlavní otázce. Nejjednodušší model, který známe, je přímka: počet druhů jako lineární funkce plochy ostrova. Vztah zobrazíme v `r render_glossary_term("bodovy-graf", display = "bodovém grafu")` (anglicky *scatter plot*) a odhadneme `r render_glossary_term("linearni-model", display = "lineární model")`.
+
+```{r}
+#| label: odhadnout-primku
+#| echo: true
+#| eval: true
+#| fig-cap: "Počet druhů rostlin a plocha ostrova s odhadnutou přímkou."
+#| fig-alt: "Bodový graf, ve kterém je většina ostrovů namačkaná u počátku os. Několik velkých ostrovů leží vpravo, největší ostrov úplně vpravo pod přímkou."
+
+# Odhadneme přímku pro počet druhů podle plochy
+mod_primka <-
+  lm(
+    formula = pocet_druhu ~ plocha_km2,
+    data = data_ostrovy
+  )
+
+# Zobrazíme ostrovy a odhadnutou přímku
+plot(
+  x = data_ostrovy$plocha_km2,
+  y = data_ostrovy$pocet_druhu,
+  pch = 19,
+  col = "#5D2890",
+  xlab = "Plocha ostrova (km²)",
+  ylab = "Počet druhů rostlin"
+)
+
+abline(
+  reg = mod_primka,
+  col = "#D55E00",
+  lwd = 2
+)
+
+# Vypíšeme odhadnutý intercept a sklon
+coef(object = mod_primka)
+```
+
+```{r}
+#| label: ulozit-koeficienty-primky
+#| echo: false
+koef_primka <- stats::coef(mod_primka)
+sto_km2 <- 100
+```
+
+Přímka říká, že každý další kilometr čtvereční přidá v průměru `r formatC(koef_primka[["plocha_km2"]], format = "f", digits = 3)` druhu, tedy asi `r formatC(sto_km2 * koef_primka[["plocha_km2"]], format = "f", digits = 1)` druhu na `r sto_km2` km². Obrázek ale ukazuje problém: `r pocet_malych_ostrovu` ostrovů je namačkaných u levého okraje grafu a o `r render_glossary_term("sklon", display = "sklonu")` přímky rozhoduje hlavně několik velkých ostrovů vpravo. Jak dobře přímka data popisuje, zjistíme z `r render_glossary_term("residuum", display = "residuí")`. Předtím si ale ujasníme, co přesně u nich kontrolujeme.
+
+## Co přesně má být u lineárního modelu normální?
+
+Viděli jsme, že počet druhů i plocha jsou silně pravostranně šikmé. Znamená to, že `r render_glossary_term("linearni-model", display = "lineární model")` pro tato data nelze použít?
+
+::: {.box-question title="Co musí mít přibližně normální rozdělení?"}
+Lineární model předpokládá přibližně normální rozdělení:
+
+a) `r render_glossary_term("odezva", display = "odezvy")` (počtu druhů),
+b) `r render_glossary_term("prediktor", display = "prediktoru")` (plochy ostrova),
+c) `r render_glossary_term("residuum", display = "residuí")` modelu,
+d) odezvy i prediktoru zároveň.
+:::
+
+::: {.box-result title="Řešení" collapse="true"}
+**Správně je c).** Lineární model popisuje odezvu jako součet systematické části (přímky) a náhodných odchylek kolem ní. Předpoklad normality se týká právě těchto odchylek, tedy residuí.
+
+- a) Odezva může být šikmá, například proto, že šikmý je prediktor. Pokud model vysvětlí, proč jsou některé hodnoty velké, residua mohou být souměrná i u šikmé odezvy.
+- b) O `r render_glossary_term("rozdeleni", display = "rozdělení")` prediktoru model nepředpokládá nic. Hodnoty prediktoru bereme jako dané.
+- d) Tento požadavek je ještě přísnější než a) a model jej nemá.
+:::
+
+::: {.box-warning title="Častá chyba: kontrolovat normalitu dat místo residuí"}
+`r render_glossary_term("histogram", display = "Histogram")` nebo test normality samotné odezvy či prediktoru nerozhoduje o tom, zda je lineární model vhodný. Rozhodují residua odhadnutého modelu. Šikmý prediktor ani šikmá odezva samy o sobě předpoklad neporušují. Totéž jsme poprvé uvedli u přímky pro kosatce: lineární model nevyžaduje, aby samotná odezva měla normální rozdělení. Příklad modelu, jehož odezva je silně šikmá, a residua přesto vyhovující, uvidíme v části o tvaru vztahu.
+:::
+
+::: {.box-data collapse="true" title="Doplňující: měly modely z předchozích lekcí přibližně normální residua?"}
+Předpoklad o tvaru residuí platil pro každý lineární model v kurzu, ale ne vždy jsme jej kontrolovali stejně důkladně. Vyzkoušejte to zpětně. Pro dva modely máme data k dispozici přímo zde.
+
+**Kosatce (lekce o první přímce).** Model délky korunního lístku podle jeho šířky lze odhadnout z dat `iris`, která jsou součástí R.
+
+```{r}
+#| label: zpetna-kontrola-kosatce
+#| echo: true
+#| eval: true
+#| fig-cap: "Q–Q graf residuí přímky pro kosatce z lekce o první přímce."
+#| fig-alt: "Q–Q graf, ve kterém body leží blízko přímky, jen na obou koncích se mírně odklánějí opačnými směry."
+
+# Model z lekce o první přímce, odhadnutý z vestavěných dat iris
+mod_kosatce <-
+  lm(
+    formula = Petal.Length ~ Petal.Width,
+    data = iris
+  )
+
+qqnorm(
+  y = residuals(object = mod_kosatce),
+  pch = 19,
+  main = "",
+  xlab = "Teoretický kvantil normálního rozdělení",
+  ylab = "Residuum (cm)"
+)
+
+qqline(
+  y = residuals(object = mod_kosatce),
+  col = "#D55E00",
+  lwd = 2
+)
+```
+
+**Stromy (předchozí lekce).** Aditivní model výšky stromu podle průměru kmene a druhu:
+
+```{r}
+#| label: zpetna-kontrola-stromy
+#| echo: true
+#| eval: true
+#| fig-cap: "Q–Q graf residuí aditivního modelu pro stromy z předchozí lekce."
+#| fig-alt: "Q–Q graf, ve kterém se body na obou koncích výrazněji odklánějí od přímky."
+
+# Stromy z předchozí lekce
+data_stromy_kontrola <-
+  read.csv(
+    file = here::here("data", "allometrie_stromu.csv"),
+    stringsAsFactors = TRUE
+  )
+
+mod_stromy_kontrola <-
+  lm(
+    formula = vyska_stromu_m ~ prumer_kmene_cm + druh_stromu,
+    data = data_stromy_kontrola
+  )
+
+qqnorm(
+  y = residuals(object = mod_stromy_kontrola),
+  pch = 19,
+  main = "",
+  xlab = "Teoretický kvantil normálního rozdělení",
+  ylab = "Residuum (m)"
+)
+
+qqline(
+  y = residuals(object = mod_stromy_kontrola),
+  col = "#D55E00",
+  lwd = 2
+)
+```
+
+U kosatců se konce odklánějí jen mírně. U stromů je odchylka výraznější; souvisí s obloukem v residuích, ke kterému se vrátíme na konci lekce.
+
+**Ostatní modely zkontrolujte sami** v R skriptech z praktických cvičení příslušných lekcí. Ke každému modelu stačí doplnit `qqnorm()` a `qqline()` s jeho residui:
+
+| Lekce | Model | Co jsme o residuích tehdy zkontrolovali | Na co se zaměřit |
+|---|---|---|---|
+| gejzír Old Faithful | čekání podle délky erupce | graf residuí podle odhadnutých hodnot: dvě skupiny erupcí, obě kolem nuly, a několik velkých kladných residuí | zda velká kladná residua neprodlužují pravý konec Q–Q grafu; schod by se objevil jen tehdy, kdyby residua jedné skupiny ležela soustavně výš než residua druhé |
+| kraby a zeměpisná šířka | šířka krunýře podle zeměpisné šířky (průměry lokalit) | diagnostické grafy bez zřetelného vzoru, ale jen z několika lokalit | jak málo lze o tvaru říct z tak malého počtu bodů |
+| tučňáci a jejich druhy | hmotnost podle druhu | Q–Q graf: body většinou na přímce | zda se konce chovají ve všech druzích podobně |
+| křídlatka | tloušťka listu podle teploty a původu | graf residuí podle odhadnutých hodnot: dva shluky kolem nuly | Q–Q graf, který jsme tehdy neukázali |
+| kraby a pohlaví | zadní šířka podle délky krunýře, pohlaví a jejich interakce | graf residuí podle odhadnutých hodnot | Q–Q graf, který jsme tehdy neukázali |
+
+Nepřekvapí vás, když residua nebudou dokonale normální. Smyslem je posoudit, zda je odchylka natolik velká, aby zpochybnila nejistotu, kterou jsme v dané lekci vyvozovali.
+:::
+
+Jak se tedy chovají residua přímky pro ostrovy?
+
+## Co ukazují residua přímky?
+
+`r render_glossary_term("residuum", display = "Residua")` kontrolujeme stejnými grafy jako v předchozích lekcích: residui podle `r render_glossary_term("odhadnuta-hodnota", display = "odhadnutých hodnot")`, histogramem residuí a `r render_glossary_term("qq-graf", display = "Q–Q grafem")` residuí.
+
+```{r}
+#| label: residua-primky
+#| echo: true
+#| eval: true
+#| fig-cap: "Residua přímky podle odhadnutého počtu druhů."
+#| fig-alt: "Graf residuí proti odhadnutým hodnotám. Většina bodů je nahuštěná vlevo a jejich rozptyl roste doprava; body netvoří vodorovný pás kolem nuly."
+
+# Residua podle odhadnutého počtu druhů
+plot(
+  x = fitted(object = mod_primka),
+  y = residuals(object = mod_primka),
+  pch = 19,
+  col = "#5D2890",
+  xlab = "Odhadnutý počet druhů",
+  ylab = "Residuum (počet druhů)"
+)
+
+abline(
+  h = 0,
+  col = "#2E2E2E",
+  lty = 2
+)
+```
+
+```{r}
+#| label: histogram-residui-primky
+#| echo: true
+#| eval: true
+#| fig-cap: "Histogram residuí přímky."
+#| fig-alt: "Histogram residuí. Většina residuí leží v několika koších kolem nuly a malých záporných hodnot, několik residuí tvoří dlouhý ocas vpravo."
+
+# Histogram residuí přímky
+hist(
+  x = residuals(object = mod_primka),
+  breaks = 15,
+  col = "#86579E",
+  border = "white",
+  main = "",
+  xlab = "Residuum (počet druhů)",
+  ylab = "Počet ostrovů"
+)
+```
+
+```{r}
+#| label: qq-residua-primky
+#| echo: true
+#| eval: true
+#| fig-cap: "Q–Q graf residuí přímky."
+#| fig-alt: "Q–Q graf, ve kterém se body vpravo nahoře zvedají vysoko nad přímku a vlevo dole leží pod ní."
+
+# Q–Q graf residuí přímky
+qqnorm(
+  y = residuals(object = mod_primka),
+  pch = 19,
+  main = "",
+  xlab = "Teoretický kvantil normálního rozdělení",
+  ylab = "Residuum"
+)
+
+qqline(
+  y = residuals(object = mod_primka),
+  col = "#D55E00",
+  lwd = 2
+)
+```
+
+::: {.box-question title="Co residua prozrazují?"}
+Najděte v obou grafech alespoň dva vzory, které by u dobře padnoucího modelu neměly být vidět.
+:::
+
+V grafu `r render_glossary_term("residuum", display = "residuí")` podle odhadnutých hodnot netvoří body vodorovný pás kolem nuly. Většina ostrovů je nahuštěná vlevo, kde má přímka malé odhady, a **rozptyl residuí se směrem doprava zvětšuje** (`r render_glossary_term("heteroskedasticita", display = "heteroskedasticita")`). Histogram residuí má dlouhý ocas vpravo a `r render_glossary_term("qq-graf", display = "Q–Q graf")` se vpravo prudce zvedá: několik kladných residuí je mnohem větších, než by normální rozdělení čekalo. Residua přímky jsou tedy pravostranně šikmá, nemají přibližně normální tvar a jejich rozptyl není konstantní. **Problém se netýká jen tvaru `r render_glossary_term("rozdeleni", display = "rozdělení")`, ale i tvaru vztahu: přímka nesleduje, jak se počet druhů s plochou opravdu mění.**
+
+## Jak jeden velký ostrov ovlivní celou přímku?
+
+Šikmý `r render_glossary_term("prediktor", display = "prediktor")` předpoklad modelu neporušuje, ale má praktický důsledek. Několik extrémně velkých ostrovů leží daleko od ostatních na ose x. Taková `r render_glossary_term("pozorovani", display = "pozorování")` mají velký `r render_glossary_term("pakovy-efekt", display = "pákový efekt")` (anglicky *leverage*): přímka se k nim natáčí podobně jako dlouhá páka. Jejich vliv na model měří `r render_glossary_term("cookova-vzdalenost", display = "Cookova vzdálenost")`, kterou známe z předchozích lekcí.
+
+::: {.box-question title="Který ostrov přímku ovládá?"}
+Podívejte se znovu na bodový graf s přímkou. Který ostrov by podle vás po vynechání změnil přímku nejvíc a proč?
+:::
+
+```{r}
+#| label: cookova-vzdalenost-primky
+#| echo: true
+#| eval: true
+#| fig-cap: "Cookovy vzdálenosti jednotlivých ostrovů v modelu přímky."
+#| fig-alt: "Sloupcový graf Cookových vzdáleností. Jeden ostrov má vzdálenost mnohonásobně vyšší než všechny ostatní, které jsou téměř nulové."
+
+# Vypočítáme vliv jednotlivých ostrovů na přímku
+vec_cook_primka <-
+  cooks.distance(model = mod_primka)
+
+plot(
+  x = vec_cook_primka,
+  type = "h",
+  lwd = 3,
+  col = "#5D2890",
+  xlab = "Pořadí ostrova v tabulce",
+  ylab = "Cookova vzdálenost"
+)
+```
+
+```{r}
+#| label: najit-nejvlivnejsi-ostrov
+#| echo: false
+poradi_nejvlivnejsi <- which.max(vec_cook_primka)
+ostrov_nejvlivnejsi <- data_ostrovy$ostrov[poradi_nejvlivnejsi]
+cook_nejvlivnejsi <- max(vec_cook_primka)
+cook_druhy_nejvetsi <- sort(vec_cook_primka, decreasing = TRUE)[2]
+```
+
+Ostrov `r ostrov_nejvlivnejsi` má `r render_glossary_term("cookova-vzdalenost", display = "Cookovu vzdálenost")` `r formatC(cook_nejvlivnejsi, format = "f", digits = 1)`, zatímco druhá nejvyšší hodnota je jen `r formatC(cook_druhy_nejvetsi, format = "f", digits = 2)`. Hodnota větší než 1 je podle všech běžných orientačních pravidel neobvykle vysoká. **`r render_glossary_term("sklon", display = "Sklon")` přímky tak z velké části určuje jediný ostrov.** Ostrov přitom není chybou měření a nemáme důvod jej odstranit. Problém je v modelu: přímka neumí popsat ostrovy, jejichž plochy se liší o několik řádů.
+
+## Co říká test normality residuí?
+
+`r render_glossary_term("qq-graf", display = "Q–Q graf")` posuzujeme očima. Někdy chceme odchylku od normálního tvaru shrnout také jedním číslem. K tomu slouží **test normality**, nejčastěji Shapiro–Wilkův test (*Shapiro–Wilk test*). Jak se jeho statistika počítá, nepotřebujeme; důležité je umět výsledek přečíst.
+
+
+Test používá stejnou logiku jako ostatní testy v kurzu. `r render_glossary_term("nulova-hypoteza", display = "Nulová hypotéza")` tvrdí, že `r render_glossary_term("residuum", display = "residua")` pocházejí z normálního rozdělení. `r render_glossary_term("p-hodnota", display = "P-hodnota")` říká, jak neobvyklá by byla tak velká odchylka od normálního tvaru, kdyby nulová hypotéza platila.
+
+```{r}
+#| label: test-normality-primky
+#| echo: true
+#| eval: true
+
+# Shapiro–Wilkův test normality residuí přímky
+shapiro.test(x = residuals(object = mod_primka))
+```
+
+```{r}
+#| label: ulozit-test-primky
+#| echo: false
+p_shapiro_primka <-
+  stats::shapiro.test(stats::residuals(mod_primka))$p.value
+```
+
+Test vrátil p `r sub("<", "< ", format.pval(p_shapiro_primka, eps = 0.001, digits = 2))`. Kdyby `r render_glossary_term("residuum", display = "residua")` pocházela z normálního rozdělení, tak velká odchylka by byla velmi neobvyklá. Test tedy potvrzuje to, co jsme viděli v `r render_glossary_term("qq-graf", display = "Q–Q grafu")`.
+
+::: {.box-rule title="Jak číst test normality"}
+- **Malá `r render_glossary_term("p-hodnota", display = "p-hodnota")`** znamená, že residua jen stěží pocházejí z normálního rozdělení. Neříká, jak velká odchylka je ani zda je pro naši otázku podstatná.
+- **Velká p-hodnota** neznamená, že residua *jsou* normální. Znamená jen, že test odchylku neprokázal.
+- Test vždy čteme **až po Q–Q grafu** a spolu s ním, nikdy místo něj.
+:::
+
+## Proč výsledek testu závisí na počtu pozorování?
+
+Test normality odpovídá na otázku „lze odchylku od normálního tvaru odlišit od náhody?“, nikoli „je odchylka pro model podstatná?“. Odpověď na první otázku silně závisí na počtu `r render_glossary_term("pozorovani", display = "pozorování")`. Ukážeme to simulací: opakovaně vytvoříme soubory `r render_glossary_term("residuum", display = "residuí")` s mírnou a se silnou pravostrannou šikmostí a pro každý soubor provedeme Shapiro–Wilkův test.
+
+```{r}
+#| label: simulovat-silu-testu
+#| echo: false
+set.seed(seed_kurz)
+
+vec_velikosti_vzorku <- c(10, 30, 100, 300, 1000)
+pocet_opakovani <- 400
+hladina_testu <- 0.05
+
+data_sila_testu <-
+  tidyr::expand_grid(
+    odchylka = c(
+      "Mírná šikmost",
+      "Silná šikmost"
+    ),
+    n = vec_velikosti_vzorku
+  ) |>
+  dplyr::mutate(
+    podil_zamitnuti = purrr::map2_dbl(
+      .x = odchylka,
+      .y = n,
+      .f = ~ mean(
+        purrr::map_lgl(
+          .x = seq_len(pocet_opakovani),
+          .f = function(opakovani) {
+            vzorek <-
+              if (.x == "Mírná šikmost") {
+                stats::rgamma(n = .y, shape = 20)
+              } else {
+                stats::rlnorm(n = .y, sdlog = 1)
+              }
+            stats::shapiro.test(vzorek)$p.value < hladina_testu
+          }
+        )
+      )
+    ),
+    n = factor(x = n, levels = vec_velikosti_vzorku)
+  )
+
+podil_mirna_30 <-
+  data_sila_testu$podil_zamitnuti[
+    data_sila_testu$odchylka == "Mírná šikmost" &
+      data_sila_testu$n == vec_velikosti_vzorku[2]
+  ]
+
+podil_mirna_1000 <-
+  data_sila_testu$podil_zamitnuti[
+    data_sila_testu$odchylka == "Mírná šikmost" &
+      data_sila_testu$n == vec_velikosti_vzorku[5]
+  ]
+
+podil_silna_10 <-
+  data_sila_testu$podil_zamitnuti[
+    data_sila_testu$odchylka == "Silná šikmost" &
+      data_sila_testu$n == vec_velikosti_vzorku[1]
+  ]
+```
+
+::: {.box-question title="Předpovězte výsledek"}
+Odchylka residuí od normálního tvaru bude stejná, jen se zvětší počet pozorování. Bude test takovou odchylku odhalovat častěji, nebo méně často?
+:::
+
+```{r}
+#| label: zobrazit-silu-testu
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 8
+#| fig-height: 3.8
+#| fig-cap: !expr 'paste0("Simulace: jak často Shapiro–Wilkův test na hladině ", hladina_testu, " odhalí stejnou odchylku od normálního tvaru při různém počtu pozorování (", pocet_opakovani, " opakování pro každou kombinaci).")'
+#| fig-alt: "Dva panely sloupcového grafu. U mírné šikmosti roste podíl odhalených odchylek od malých hodnot při deseti a třiceti pozorováních k téměř stu procentům při tisíci pozorováních. U silné šikmosti je podíl vysoký už od třiceti pozorování, ale při deseti pozorováních test část souborů neodhalí."
+ggplot2::ggplot(
+  data = data_sila_testu,
+  mapping = ggplot2::aes(
+    x = n,
+    y = podil_zamitnuti
+  )
+) +
+  ggplot2::geom_col(fill = "#86579E") +
+  ggplot2::facet_wrap(facets = ggplot2::vars(odchylka)) +
+  ggplot2::scale_y_continuous(
+    labels = scales::label_percent(),
+    limits = c(0, 1)
+  ) +
+  ggplot2::labs(
+    x = "Počet pozorování",
+    y = "Podíl souborů s p < 0,05"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Při mírné šikmosti test odchylku odhalil jen v `r scales::label_percent(accuracy = 1)(podil_mirna_30)` souborů se `r vec_velikosti_vzorku[2]` pozorováními, ale v `r scales::label_percent(accuracy = 1)(podil_mirna_1000)` souborů s `r vec_velikosti_vzorku[5]` pozorováními. Silnou šikmost při `r vec_velikosti_vzorku[1]` pozorováních odhalil jen v `r scales::label_percent(accuracy = 1)(podil_silna_10)` souborů.
+
+V lekci o první přímce jsme upozornili, že u velkého souboru může i nepatrná odchylka vypadat „statisticky zjistitelně“. Simulace tento jev ukazuje přímo. Podíl souborů, ve kterých test skutečně existující odchylku odhalí, jsme v lekci o testování nazvali **síla testu**: roste s počtem pozorování a s velikostí odchylky.
+
+Z toho plynou dvě praktická pravidla:
+
+- **U velkých vzorků** test označí i drobné odchylky, které pro `r render_glossary_term("linearni-model", display = "lineární model")` nemají praktický význam. U velkých vzorků navíc mírná odchylka od normálního tvaru residuí odhady `r render_glossary_term("sklon", display = "sklonů")` a `r render_glossary_term("interval-spolehlivosti", display = "intervaly spolehlivosti")` obvykle téměř neovlivní; podrobné zdůvodnění přesahuje tento kurz.
+- **U malých vzorků** může test nevýznamným výsledkem „propustit“ i velkou odchylku. Naše data mají jen `r pocet_ostrovu` ostrovů, takže velká `r render_glossary_term("p-hodnota", display = "p-hodnota")` by sama o sobě mnoho nedokazovala.
+
+Rozhodnutí proto stojí na `r render_glossary_term("qq-graf", display = "Q–Q grafu")`, na grafu residuí podle odhadnutých hodnot a na otázce, zda odchylka může změnit biologický závěr. Test je doplňující číslo, nikoli brána, kterou musí model projít.
+
+# Transformace: měřítko, nebo tvar?
+
+Přímka selhala dvakrát: její `r render_glossary_term("residuum", display = "residua")` mají šikmý tvar a rostoucí rozptyl a o jejím sklonu rozhoduje jediný ostrov. Než začneme měnit model, podíváme se na nástroj, který ke změně potřebujeme: **transformaci** proměnné. `r render_glossary_term("transformace", display = "Transformace")` znamená, že na každou hodnotu proměnné použijeme stejný výpočet, například vynásobení stem nebo logaritmus. Uvidíme, že transformace se dělí do dvou velmi odlišných skupin.
+
+## Změní se tvar rozdělení, když plochu převedeme na hektary?
+
+Nejjednodušší `r render_glossary_term("transformace", display = "transformací")` je změna jednotek. Jeden kilometr čtvereční má 100 hektarů.
+
+```{r}
+#| label: prevest-na-hektary
+#| echo: true
+#| eval: true
+
+# Převedeme plochu z km² na hektary
+data_ostrovy$plocha_ha <-
+  data_ostrovy$plocha_km2 * 100
+```
+
+```{r}
+#| label: zobrazit-km2-a-hektary
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 8
+#| fig-height: 3.4
+#| fig-cap: "Plocha ostrovů v km² a v hektarech. Mění se jen popisky vodorovné osy."
+#| fig-alt: "Dva histogramy se zcela stejným tvarem. Liší se jen čísla na vodorovné ose, která jsou vpravo stokrát větší."
+data_jednotky <-
+  tibble::tibble(
+    jednotka = factor(
+      x = rep(
+        x = c("Plocha v km²", "Plocha v hektarech"),
+        each = pocet_ostrovu
+      ),
+      levels = c("Plocha v km²", "Plocha v hektarech")
+    ),
+    hodnota = c(
+      data_ostrovy$plocha_km2,
+      data_ostrovy$plocha_ha
+    )
+  )
+
+ggplot2::ggplot(
+  data = data_jednotky,
+  mapping = ggplot2::aes(x = hodnota)
+) +
+  ggplot2::geom_histogram(
+    bins = 15,
+    fill = "#86579E",
+    color = "white"
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(jednotka),
+    scales = "free_x"
+  ) +
+  ggplot2::scale_x_continuous(
+    labels = scales::label_number(big.mark = " "),
+    n.breaks = 3,
+    expand = ggplot2::expansion(mult = c(0.03, 0.12))
+  ) +
+  ggplot2::labs(
+    x = "Plocha ostrova",
+    y = "Počet ostrovů"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Oba `r render_glossary_term("histogram", display = "histogramy")` mají stejný tvar. Změnila se jen čísla na ose. Vynásobení konstantou natáhne nebo stlačí osu, ale **pořadí ostrovů ani poměry vzdáleností mezi nimi se nezmění**, a proto se nezmění ani tvar `r render_glossary_term("rozdeleni", display = "rozdělení")`.
+
+::: {.box-rule title="Kdy měníme jednotky?"}
+- **Spojujeme data z různých zdrojů.** Jedna studie uvádí plochu v hektarech, druhá v km²; hmotnost jednou v gramech, jindy v kilogramech. Před společnou analýzou je musíme převést na stejné jednotky.
+- **Chceme čitelný koeficient.** Přímka v části o předpokladech modelu přidávala `r formatC(koef_primka[["plocha_km2"]], format = "f", digits = 3)` druhu na 1 km². Totéž vyjádřené na 100 km² (`r formatC(sto_km2 * koef_primka[["plocha_km2"]], format = "f", digits = 1)` druhu) se čte snáz. Změna jednotek prediktoru změní sklon stejným násobkem, ale nezmění žádný závěr modelu.
+:::
+
+## Co se změní, když od plochy odečteme průměr?
+
+Druhou jednoduchou `r render_glossary_term("transformace", display = "transformací")` je **centrování** (anglicky *centring*): od každé hodnoty odečteme `r render_glossary_term("prumer", display = "průměr")`. Centrovaná plocha říká, o kolik km² je ostrov větší nebo menší než průměrný ostrov.
+
+::: {.box-question title="Který koeficient se změní?"}
+Odhadneme stejnou přímku jednou s původní a jednou s centrovanou plochou. Změní se po centrování sklon, intercept, nebo oba koeficienty?
+:::
+
+```{r}
+#| label: centrovat-plochu
+#| echo: true
+#| eval: true
+
+# Od plochy každého ostrova odečteme průměrnou plochu
+data_ostrovy$plocha_centrovana <-
+  data_ostrovy$plocha_km2 - mean(x = data_ostrovy$plocha_km2)
+
+# Odhadneme stejnou přímku s centrovanou plochou
+mod_primka_centrovana <-
+  lm(
+    formula = pocet_druhu ~ plocha_centrovana,
+    data = data_ostrovy
+  )
+
+# Porovnáme koeficienty obou přímek
+coef(object = mod_primka)
+coef(object = mod_primka_centrovana)
+```
+
+```{r}
+#| label: ulozit-centrovane-koeficienty
+#| echo: false
+koef_primka_centrovana <- stats::coef(mod_primka_centrovana)
+```
+
+```{r}
+#| label: zobrazit-centrovani
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 8.5
+#| fig-height: 3.8
+#| fig-cap: "Stejná přímka nad původní a nad centrovanou plochou. Svislá přerušovaná čára označuje nulu na vodorovné ose; kosočtverec je intercept, tedy výška přímky v této nule."
+#| fig-alt: "Dva bodové grafy se stejnými body a stejnou přímkou. Vlevo leží nula vodorovné osy u nejmenších ostrovů a intercept je nízko. Vpravo leží nula uprostřed, v průměrné ploše, a intercept je výš."
+vec_poradi_centrovani <-
+  c(
+    "Původní plocha (km²)",
+    "Centrovaná plocha (km² od průměru)"
+  )
+
+data_centrovani <-
+  tibble::tibble(
+    skala = factor(
+      x = rep(x = vec_poradi_centrovani, each = pocet_ostrovu),
+      levels = vec_poradi_centrovani
+    ),
+    plocha = c(
+      data_ostrovy$plocha_km2,
+      data_ostrovy$plocha_centrovana
+    ),
+    pocet_druhu = rep(x = data_ostrovy$pocet_druhu, times = 2)
+  )
+
+data_intercepty <-
+  tibble::tibble(
+    skala = factor(x = vec_poradi_centrovani, levels = vec_poradi_centrovani),
+    intercept = c(
+      koef_primka[["(Intercept)"]],
+      koef_primka_centrovana[["(Intercept)"]]
+    ),
+    sklon = c(
+      koef_primka[["plocha_km2"]],
+      koef_primka_centrovana[["plocha_centrovana"]]
+    )
+  )
+
+ggplot2::ggplot(
+  data = data_centrovani,
+  mapping = ggplot2::aes(
+    x = plocha,
+    y = pocet_druhu
+  )
+) +
+  ggplot2::geom_vline(
+    xintercept = 0,
+    linetype = "dashed",
+    color = barva_text
+  ) +
+  ggplot2::geom_abline(
+    data = data_intercepty,
+    mapping = ggplot2::aes(
+      intercept = intercept,
+      slope = sklon
+    ),
+    color = barva_cara,
+    linewidth = 1.1
+  ) +
+  ggplot2::geom_point(
+    color = barva_hlavni,
+    size = 2,
+    alpha = 0.8
+  ) +
+  ggplot2::geom_point(
+    data = data_intercepty,
+    mapping = ggplot2::aes(
+      x = 0,
+      y = intercept
+    ),
+    shape = 23,
+    size = 4,
+    fill = barva_doplnkova,
+    color = barva_text
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(skala),
+    scales = "free_x"
+  ) +
+  ggplot2::labs(
+    x = NULL,
+    y = "Počet druhů rostlin"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Body i přímka jsou v obou panelech stejné; centrování jen posune osu tak, že nula leží v `r render_glossary_term("prumer", display = "průměru")`. Tvar `r render_glossary_term("rozdeleni", display = "rozdělení")` zůstane stejný. V modelu se **`r render_glossary_term("sklon", display = "sklon")` nezmění** (v obou modelech je `r formatC(koef_primka[["plocha_km2"]], format = "f", digits = 4)`), protože jeden km² navíc znamená totéž bez ohledu na to, odkud plochu měříme. **Změní se význam interceptu.** V původním modelu je `r render_glossary_term("intercept", display = "intercept")` `r formatC(koef_primka[["(Intercept)"]], format = "f", digits = 1)` odhadnutým počtem druhů na ostrově s nulovou plochou, tedy na ostrově, který neexistuje. V centrovaném modelu je intercept `r formatC(koef_primka_centrovana[["(Intercept)"]], format = "f", digits = 1)` odhadnutým počtem druhů na ostrově s průměrnou plochou `r formatC(prumer_plochy, format = "f", digits = 1)` km². U přímky odhadnuté metodou nejmenších čtverců se tato hodnota rovná průměrnému počtu druhů.
+
+::: {.box-rule title="Kdy centrujeme?"}
+- **Intercept by jinak popisoval nesmysl.** V lekci o interakcích jsme narazili na to, že koeficient pohlaví u krabů se vztahoval k délce krunýře 0 mm, tedy mimo data. Po centrování délky by popisoval rozdíl mezi pohlavími u kraba průměrné délky.
+- **Prediktor je letopočet nebo nadmořská výška.** Trend „od roku 0“ nebo počet druhů „u hladiny moře“ často nemají biologický smysl. Odečteme proto smysluplnou referenční hodnotu: průměr, začátek sledování nebo průměrnou nadmořskou výšku lokalit.
+- **Model obsahuje interakci.** Hlavní koeficienty se pak vztahují k nulové hodnotě druhé proměnné; po centrování ke středu dat, kde se nejsnáze vysvětlují.
+:::
+
+Centrování se proto hodí, když chceme, aby intercept popisoval smysluplnou, typickou hodnotu `r render_glossary_term("prediktor", display = "prediktoru")`.
+
+## Jak daleko od průměru leží ostrov?
+
+Třetí `r render_glossary_term("transformace", display = "transformace")` spojuje centrování se změnou jednotek. Odchylku od `r render_glossary_term("prumer", display = "průměru")` nevyjádříme v km² nebo metrech, ale v počtu `r render_glossary_term("smerodatna-odchylka", display = "směrodatných odchylek")`. Výsledek se nazývá **z-skóre** (anglicky *z-score*) a převod na z-skóre **standardizace**.
+
+
+Myšlenku už známe: t-statistika v předchozích lekcích také měřila vzdálenost odhadu od nulové hodnoty v jednotkách jeho `r render_glossary_term("standardni-chyba", display = "standardní chyby")`. Z-skóre dělá totéž s jednotlivou hodnotou. Slovy:
+
+$$
+\text{z-skóre} =
+\frac{\text{hodnota} - \text{průměr}}{\text{směrodatná odchylka}}.
+$$
+
+```{r}
+#| label: spocitat-z-skore-fernandina
+#| echo: false
+fernandina <-
+  data_ostrovy[data_ostrovy$ostrov == "Fernandina", ]
+
+prumer_vysky <- mean(data_ostrovy$nejvyssi_bod_m, na.rm = TRUE)
+sd_vysky <- stats::sd(data_ostrovy$nejvyssi_bod_m, na.rm = TRUE)
+sd_plochy <- stats::sd(data_ostrovy$plocha_km2)
+
+odchylka_vysky_fernandina <- fernandina$nejvyssi_bod_m - prumer_vysky
+z_vyska_fernandina <- odchylka_vysky_fernandina / sd_vysky
+
+odchylka_plochy_fernandina <- fernandina$plocha_km2 - prumer_plochy
+z_plocha_fernandina <- odchylka_plochy_fernandina / sd_plochy
+
+pocet_ostrovu_s_vyskou <- sum(!is.na(data_ostrovy$nejvyssi_bod_m))
+
+data_z_fernandina <-
+  tibble::tibble(
+    velicina = "Nejvyšší bod (m n. m.)",
+    hodnota = fernandina$nejvyssi_bod_m,
+    prumer = prumer_vysky,
+    odchylka = odchylka_vysky_fernandina,
+    sd = sd_vysky,
+    z = z_vyska_fernandina
+  )
+
+poradi_plochy_fernandina <-
+  rank(-data_ostrovy$plocha_km2)[data_ostrovy$ostrov == "Fernandina"]
+
+poradi_vysky_fernandina <-
+  rank(-data_ostrovy$nejvyssi_bod_m, na.last = "keep")[
+    data_ostrovy$ostrov == "Fernandina"
+  ]
+```
+
+Spočítejme z-skóre nejvyššího bodu ostrova Fernandina. Průměr a směrodatnou odchylku počítáme z `r pocet_ostrovu_s_vyskou` ostrovů, u kterých je nejvyšší bod známý.
+
+```{r}
+#| label: tabulka-z-skore-fernandina
+#| echo: false
+knitr::kable(
+  x = data_z_fernandina,
+  digits = 2,
+  col.names = c(
+    "Veličina",
+    "Fernandina",
+    "Průměr",
+    "Odchylka",
+    "SD",
+    "z"
+  ),
+  caption = "Od nejvyššího bodu ostrova Fernandina k jeho z-skóre (SD = směrodatná odchylka)."
+)
+```
+
+Do slovního vzorce dosadíme hodnoty z tabulky:
+
+$$
+\begin{align}
+\text{z-skóre výšky Fernandiny}
+&= \frac{`r fernandina$nejvyssi_bod_m` - `r formatC(prumer_vysky, format = "f", digits = 2)`}{`r formatC(sd_vysky, format = "f", digits = 2)`} \\
+&= \frac{`r formatC(odchylka_vysky_fernandina, format = "f", digits = 2)`}{`r formatC(sd_vysky, format = "f", digits = 2)`} \\
+&= `r formatC(z_vyska_fernandina, format = "f", digits = 2)`.
+\end{align}
+$$
+
+Nejvyšší bod Fernandiny leží `r formatC(z_vyska_fernandina, format = "f", digits = 2)` směrodatné odchylky nad průměrem ostrovů. Obecně pro hodnotu $x_i$ píšeme:
+
+$$
+z_i = \frac{x_i - \bar{x}}{s}.
+$$
+
+Symbol $z_i$ je z-skóre $i$-tého `r render_glossary_term("pozorovani", display = "pozorování")`, $x_i$ jeho původní hodnota, $\bar{x}$ průměr všech hodnot a $s$ jejich směrodatná odchylka. Kladné z-skóre znamená hodnotu nad průměrem, záporné pod průměrem a z-skóre 0 přesně průměr. U přibližně normální proměnné proto podle pravidla z kapitoly o normálním rozdělení leží asi `r format_procenta(podil_2_sd)` z-skóre mezi −2 a 2.
+
+::: {.box-question title="Spočítejte z-skóre plochy"}
+Fernandina má plochu `r fernandina$plocha_km2` km². Průměrná plocha ostrovů je `r formatC(prumer_plochy, format = "f", digits = 2)` km² a směrodatná odchylka ploch `r formatC(sd_plochy, format = "f", digits = 2)` km². Spočítejte z-skóre plochy Fernandiny.
+:::
+
+::: {.box-result title="Řešení" collapse="true"}
+$$
+\frac{`r fernandina$plocha_km2` - `r formatC(prumer_plochy, format = "f", digits = 2)`}{`r formatC(sd_plochy, format = "f", digits = 2)`}
+= \frac{`r formatC(odchylka_plochy_fernandina, format = "f", digits = 2)`}{`r formatC(sd_plochy, format = "f", digits = 2)`}
+= `r formatC(z_plocha_fernandina, format = "f", digits = 2)`.
+$$
+
+Plocha Fernandiny leží `r formatC(z_plocha_fernandina, format = "f", digits = 2)` směrodatné odchylky nad průměrnou plochou.
+:::
+
+V R lze z-skóre spočítat přímo podle vzorce, nebo funkcí `scale()`:
+
+```{r}
+#| label: spocitat-z-skore
+#| echo: true
+#| eval: true
+
+# z-skóre nejvyššího bodu podle vzorce
+data_ostrovy$vyska_z <-
+  (data_ostrovy$nejvyssi_bod_m -
+    mean(x = data_ostrovy$nejvyssi_bod_m, na.rm = TRUE)) /
+  sd(x = data_ostrovy$nejvyssi_bod_m, na.rm = TRUE)
+
+# Stejný výsledek funkcí scale(); as.numeric() odstraní pomocné atributy
+data_ostrovy$vyska_z_scale <-
+  as.numeric(x = scale(x = data_ostrovy$nejvyssi_bod_m))
+
+# Porovnáme oba výpočty u prvních ostrovů
+head(
+  x = data_ostrovy[, c("ostrov", "vyska_z", "vyska_z_scale")],
+  n = 4
+)
+
+# Průměr a směrodatná odchylka všech z-skóre
+round(
+  x = mean(x = data_ostrovy$vyska_z, na.rm = TRUE),
+  digits = 10
+)
+
+sd(x = data_ostrovy$vyska_z, na.rm = TRUE)
+```
+
+Když převedeme na z-skóre **všechny hodnoty proměnné**, má výsledná proměnná vždy průměr 0 a směrodatnou odchylku 1. Průměr je nulový, protože jsme od každé hodnoty odečetli původní průměr, a směrodatná odchylka je 1, protože jsme každou odchylku vydělili původní směrodatnou odchylkou. Z-skóre tedy všechny proměnné převádí na stejnou „měrnou jednotku“: počet směrodatných odchylek od průměru.
+
+## Je Fernandina výjimečnější plochou, nebo výškou?
+
+Z-skóre nemá jednotky. Díky tomu můžeme porovnat, jak neobvyklá je hodnota u veličin měřených v úplně jiných jednotkách. Plochu v km² a výšku v metrech přímo porovnat nelze; jejich z-skóre ano.
+
+Nejvyšší bod Fernandiny leží `r formatC(z_vyska_fernandina, format = "f", digits = 2)` `r render_glossary_term("smerodatna-odchylka", display = "směrodatné odchylky")` nad průměrnou výškou, její plocha jen `r formatC(z_plocha_fernandina, format = "f", digits = 2)` směrodatné odchylky nad průměrnou plochou. Podle z-skóre by tedy byla výjimečná výškou, ale plochou spíš průměrná.
+
+Pořadí ostrovů ale ukazuje něco jiného: plochou je Fernandina `r poradi_plochy_fernandina`. největší a výškou `r poradi_vysky_fernandina`. nejvyšší ostrov souostroví. Výjimečná je tedy v obou ohledech.
+
+::: {.box-warning title="Z-skóre u šikmé veličiny klame"}
+Průměr i směrodatná odchylka jsou citlivé na extrémní hodnoty. Obrovská plocha Isabely zvětšila směrodatnou odchylku ploch natolik, že i `r poradi_plochy_fernandina`. největší ostrov vypadá v z-skóre téměř průměrně a většina ostrovů má z-skóre plochy těsně pod nulou. **Z-skóre je užitečné hlavně u přibližně souměrných veličin.** U silně šikmé veličiny samo z-skóre nestačí.
+:::
+
+::: {.box-data collapse="true" title="Doplňující: z-skóre v korelaci a v modelu"}
+Při výpočtu Pearsonovy `r render_glossary_term("korelace", display = "korelace")` jsme dělili součet součinů odchylek odmocninami součtů čtverců odchylek obou proměnných. Jednodušeji to vyjádříme takto: **Pearsonova korelace je průměrný součin z-skóre obou proměnných** (s dělením $n - 1$ místo $n$, stejně jako u směrodatné odchylky). Protože z-skóre nemá jednotky, nemá je ani korelace. A protože změna jednotek ani centrování z-skóre nezmění, nezmění ani korelaci.
+
+Z-skóre lze použít i v modelu: pokud před odhadem standardizujeme `r render_glossary_term("prediktor", display = "prediktory")`, jejich `r render_glossary_term("sklon", display = "sklony")` udávají změnu `r render_glossary_term("odezva", display = "odezvy")` při posunu o jednu směrodatnou odchylku. Takové *standardizované koeficienty* usnadňují porovnání prediktorů měřených v různých jednotkách. Neříkají ale samy o sobě, který prediktor je biologicky důležitější.
+
+```{r}
+#| label: korelace-ze-z-skore
+#| echo: true
+#| eval: true
+
+# Pearsonova korelace plochy a počtu druhů
+cor(
+  x = data_ostrovy$plocha_km2,
+  y = data_ostrovy$pocet_druhu
+)
+
+# Stejná korelace s plochou v hektarech
+cor(
+  x = data_ostrovy$plocha_ha,
+  y = data_ostrovy$pocet_druhu
+)
+
+# Stejné číslo jako součet součinů z-skóre vydělený n - 1
+sum(
+  scale(x = data_ostrovy$plocha_km2) *
+    scale(x = data_ostrovy$pocet_druhu)
+) / (nrow(x = data_ostrovy) - 1)
+```
+:::
+
+::: {.box-rule title="Kdy používáme z-skóre?"}
+- **Porovnáváme, jak neobvyklá je hodnota u veličin v různých jednotkách**, například zda je jedinec výjimečný spíš hmotností, nebo délkou křídla.
+- **Skládáme několik veličin do jednoho ukazatele.** Chceme-li například shrnout teplotu, srážky a nadmořskou výšku lokalit do jednoho „gradientu prostředí“, převedeme je nejprve na z-skóre, aby žádná veličina nepřevážila jen kvůli svým jednotkám.
+- **Porovnáváme sklony prediktorů v různých jednotkách** pomocí standardizovaných koeficientů (doplňující rámeček „z-skóre v korelaci a v modelu“ výše).
+- Vždy pamatujeme, že u silně šikmých veličin z-skóre klame (rámeček „Z-skóre u šikmé veličiny klame“).
+:::
+
+## Odstraní z-skóre šikmost?
+
+::: {.box-question title="Předpovězte tvar"}
+Plocha ostrovů je extrémně pravostranně šikmá. Bude `r render_glossary_term("histogram", display = "histogram")` z-skóre plochy souměrnější?
+:::
+
+```{r}
+#| label: zobrazit-z-skore-plochy
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 8
+#| fig-height: 3.4
+#| fig-cap: "Plocha ostrovů v km² a její z-skóre."
+#| fig-alt: "Dva histogramy se stejným pravostranně šikmým tvarem. Vlevo je osa v kilometrech čtverečních, vpravo v jednotkách směrodatné odchylky kolem nuly."
+data_ostrovy$plocha_z <-
+  as.numeric(scale(data_ostrovy$plocha_km2))
+
+vec_sikmost_plochy <-
+  purrr::map_dbl(
+    .x = list(data_ostrovy$plocha_km2, data_ostrovy$plocha_z),
+    .f = ~ mean(((.x - mean(.x)) / stats::sd(.x))^3)
+  )
+
+data_z_plocha <-
+  tibble::tibble(
+    skala = factor(
+      x = rep(
+        x = c("Plocha (km²)", "z-skóre plochy"),
+        each = pocet_ostrovu
+      ),
+      levels = c("Plocha (km²)", "z-skóre plochy")
+    ),
+    hodnota = c(
+      data_ostrovy$plocha_km2,
+      data_ostrovy$plocha_z
+    )
+  )
+
+ggplot2::ggplot(
+  data = data_z_plocha,
+  mapping = ggplot2::aes(x = hodnota)
+) +
+  ggplot2::geom_histogram(
+    bins = 15,
+    fill = "#86579E",
+    color = "white"
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(skala),
+    scales = "free_x"
+  ) +
+  ggplot2::labs(
+    x = "Hodnota",
+    y = "Počet ostrovů"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Nebude. Histogram z-skóre má přesně stejný tvar jako histogram plochy. (Kdo četl doplňující rámeček o koeficientu šikmosti: ten je před standardizací `r formatC(vec_sikmost_plochy[1], format = "f", digits = 2)` a po ní `r formatC(vec_sikmost_plochy[2], format = "f", digits = 2)`.)
+
+::: {.box-rule title="Transformace, které mění jen polohu a měřítko"}
+Změna jednotek, centrování i z-skóre jsou **lineární `r render_glossary_term("transformace", display = "transformace")`**: každou hodnotu vynásobí stejným číslem a/nebo k ní přičtou stejné číslo. Posunou a natáhnou osu, ale **tvar `r render_glossary_term("rozdeleni", display = "rozdělení")` nezmění**. Šikmost, těžké konce i dva vrcholy po nich zůstanou. Hodí se pro změnu významu `r render_glossary_term("intercept", display = "interceptu")` nebo pro porovnání veličin v různých jednotkách, nikoli pro opravu tvaru.
+:::
+
+## Jak logaritmus převádí násobky na stejné kroky?
+
+Na začátku kurzu jsme logaritmickou osu použili, když se hodnoty v grafu lišily o několik řádů. Na takové ose leží 1, 10, 100 a 1 000 ve stejných vzdálenostech: každý krok o stejnou délku znamená vynásobení desíti. Logaritmus dělá totéž s čísly. V první lekci jsme zdůraznili, že logaritmická osa mění jen rozestupy na grafu a průměr i medián zůstávají vypočtené z kilogramů. Krok, který jsme tehdy záměrně neudělali, je použít logaritmus na samotné hodnoty proměnné.
+
+```{r}
+#| label: tabulka-logaritmu
+#| echo: false
+vec_ukazkove_plochy <- c(1, 2, 4, 8, 10, 100, 1000)
+
+data_logaritmy <-
+  tibble::tibble(
+    plocha = vec_ukazkove_plochy,
+    log10_plochy = log10(vec_ukazkove_plochy),
+    ln_plochy = log(vec_ukazkove_plochy)
+  )
+
+knitr::kable(
+  x = data_logaritmy,
+  digits = 3,
+  col.names = c(
+    "Plocha (km²)",
+    "Desítkový logaritmus",
+    "Přirozený logaritmus"
+  ),
+  caption = "Stejné násobky plochy se mění ve stejné kroky logaritmu."
+)
+```
+
+Každé zdvojnásobení plochy (1 → 2 → 4 → 8) zvýší přirozený logaritmus o stejný krok `r formatC(log(2), format = "f", digits = 3)`. Každé vynásobení desíti zvýší desítkový logaritmus přesně o 1 a přirozený logaritmus o `r formatC(log(10), format = "f", digits = 3)`. **Logaritmus tedy převádí stejné poměry na stejné rozdíly.**
+
+V modelech používáme **přirozený logaritmus** (funkce `log()` v R), protože s ním se koeficienty nejsnáze interpretují. Desítkový logaritmus (`log10()`) se hodí hlavně pro popis os grafu.
+
+Proč to funguje, ukazuje základní vlastnost logaritmu. Slovy:
+
+$$
+\text{logaritmus dvojnásobné plochy} =
+\text{logaritmus původní plochy} + \text{logaritmus čísla 2}.
+$$
+
+```{r}
+#| label: priklad-logaritmu-soucinu
+#| echo: false
+priklad_plocha <- 10
+priklad_nasobek <- 2
+```
+
+Pro ostrov s plochou `r priklad_plocha` km², jehož plochu zdvojnásobíme:
+
+$$
+\begin{align}
+\ln(`r priklad_plocha * priklad_nasobek`)
+&= \ln(`r priklad_plocha`) + \ln(`r priklad_nasobek`) \\
+&= `r formatC(log(priklad_plocha), format = "f", digits = 3)` + `r formatC(log(priklad_nasobek), format = "f", digits = 3)` \\
+&= `r formatC(log(priklad_plocha * priklad_nasobek), format = "f", digits = 3)`.
+\end{align}
+$$
+
+Obecně pro dvě kladná čísla $a$ a $b$ platí:
+
+$$
+\ln(a \cdot b) = \ln(a) + \ln(b).
+$$
+
+Symbol $\ln$ označuje přirozený logaritmus, $a$ je výchozí hodnota (zde plocha) a $b$ násobek (zde 2). Násobení se v logaritmech mění na sčítání.
+
+```{r}
+#| label: spocitat-logaritmus
+#| echo: true
+#| eval: true
+
+# Přirozený logaritmus řady zdvojnásobených ploch
+log(x = c(1, 2, 4, 8))
+
+# Logaritmus nuly není konečné číslo
+log(x = 0)
+
+# Opakem logaritmu je funkce exp(); vrátí původní hodnotu
+exp(x = log(x = 8))
+```
+
+::: {.box-warning title="Logaritmus jen pro kladné hodnoty"}
+Logaritmus existuje jen pro kladná čísla. `log(0)` vrátí `-Inf` (minus nekonečno) a logaritmus záporného čísla vrátí `NaN`. Plocha i počet druhů jsou na Galapágách vždy kladné. Proměnné se skutečnými nulami, které jsme našli při prohlídce dat (vzdálenost Santa Cruz od sebe sama, ostrov bez endemitů), bychom však logaritmovat nemohli.
+:::
+
+## Co logaritmus udělá s tvarem rozdělení?
+
+Logaritmus není lineární `r render_glossary_term("transformace", display = "transformace")`. Co to znamená pro tvar rozdělení?
+
+::: {.box-question title="Který histogram změní tvar?"}
+Následující obrázek ukáže plochu ostrovů čtyřikrát: v km², jako z-skóre, po odmocnění a po logaritmování. U kterých panelů čekáte stejný tvar jako u původní plochy?
+:::
+
+```{r}
+#| label: zobrazit-ctyri-transformace
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 9
+#| fig-height: 5.4
+#| fig-cap: "Plocha ostrovů v km², jako z-skóre, po odmocnění a po logaritmování."
+#| fig-alt: "Čtyři histogramy. Plocha v km² a z-skóre plochy mají stejný extrémně pravostranně šikmý tvar. Odmocnina plochy je stále pravostranně šikmá, ale méně. Logaritmus plochy je přibližně souměrný."
+vec_poradi_transformaci <-
+  c(
+    "Plocha (km²)",
+    "z-skóre plochy",
+    "Odmocnina plochy",
+    "Logaritmus plochy"
+  )
+
+data_ctyri_transformace <-
+  tibble::tibble(
+    transformace = factor(
+      x = rep(x = vec_poradi_transformaci, each = pocet_ostrovu),
+      levels = vec_poradi_transformaci
+    ),
+    hodnota = c(
+      data_ostrovy$plocha_km2,
+      data_ostrovy$plocha_z,
+      sqrt(data_ostrovy$plocha_km2),
+      log(data_ostrovy$plocha_km2)
+    )
+  )
+
+ggplot2::ggplot(
+  data = data_ctyri_transformace,
+  mapping = ggplot2::aes(x = hodnota)
+) +
+  ggplot2::geom_histogram(
+    bins = 12,
+    fill = "#86579E",
+    color = "white"
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(transformace),
+    scales = "free_x",
+    nrow = 2
+  ) +
+  ggplot2::labs(
+    x = "Hodnota po transformaci",
+    y = "Počet ostrovů"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Z-skóre zachovalo původní tvar. Logaritmus naopak malé hodnoty od sebe roztáhl a velké k sobě stlačil: rozdíl mezi 1 a 10 km² je na logaritmické škále stejně velký jako rozdíl mezi 1 000 a 10 000 km². **Odmocnina šikmost zmírnila, ale neodstranila. Logaritmus z extrémně šikmé plochy udělal přibližně souměrné `r render_glossary_term("rozdeleni", display = "rozdělení")`.** Malé ostrovy, které byly v původním `r render_glossary_term("histogram", display = "histogramu")` namačkané v prvním koši, se rozprostřely přes celou osu.
+
+```{r}
+#| label: histogram-log-pocet-druhu
+#| echo: true
+#| eval: true
+#| fig-cap: "Histogram logaritmu počtu druhů."
+#| fig-alt: "Histogram logaritmu počtu druhů. Hodnoty jsou rozložené přibližně souměrně, bez dlouhého ocasu vpravo."
+
+# Rozdělení logaritmu počtu druhů
+hist(
+  x = log(x = data_ostrovy$pocet_druhu),
+  breaks = 10,
+  col = "#86579E",
+  border = "white",
+  main = "",
+  xlab = "Logaritmus počtu druhů",
+  ylab = "Počet ostrovů"
+)
+```
+
+Podobně se chová i počet druhů: po logaritmování již nemá dlouhý ocas vpravo. Veličinám, které jsou pravostranně šikmé, ale po logaritmování mají přibližně normální tvar, se říká **log-normální**. Typicky vznikají právě násobením mnoha náhodných vlivů, jako v simulaci populací.
+
+::: {.box-rule title="Kdy používáme logaritmus a kdy odmocninu?"}
+**Logaritmus** použijeme u kladných veličin, které se mění násobně nebo se liší o několik řádů:
+
+- velikost populací, buněčné kultury a další procesy, které rostou nebo klesají o určité procento;
+- koncentrace živin, toxinů nebo hormonů, které mezi vzorky kolísají o celé řády;
+- velikost a hmotnost organismů napříč druhy, například hmotnost savců z první lekce;
+- vztahy mezi rozměry těla (alometrie), například výška a průměr kmene stromu nebo počet druhů a plocha ostrova;
+- situace, kdy nás zajímají relativní změny („o kolik procent“, „kolikrát“), nikoli absolutní rozdíly.
+
+Logaritmickou škálu znáte i z běžného života: pH je záporný desítkový logaritmus koncentrace vodíkových iontů a decibely měří hlasitost na logaritmické škále.
+
+**Odmocninu** použijeme u nezáporných veličin s mírnou pravostrannou šikmostí, zvláště u menších počtů, kde se objevují nuly (například počet semenáčků na ploše nebo počet hmyzu v pasti). Na rozdíl od logaritmu si s nulou poradí.
+
+**Kdy ne:** pokud veličina obsahuje nuly nebo záporné hodnoty, logaritmus přímo použít nelze. U podílů mezi 0 a 1 a u počtů s mnoha nulami existují vhodnější modely, ke kterým se dostaneme později. A pokud jsou residua modelu v pořádku a biologické tvrzení je aditivní, transformace není potřeba.
+:::
+
+```{r}
+#| label: savci-odlehle-hodnoty
+#| echo: false
+vec_hmotnost_savcu <- ggplot2::msleep$bodywt
+
+pocet_odlehlych_kg <-
+  length(grDevices::boxplot.stats(vec_hmotnost_savcu)$out)
+
+pocet_odlehlych_log <-
+  length(grDevices::boxplot.stats(log(vec_hmotnost_savcu))$out)
+```
+
+::: {.box-data collapse="true" title="Doplňující: odlehlí savci z první lekce"}
+V první lekci krabicový graf tělesné hmotnosti `r length(vec_hmotnost_savcu)` druhů savců označil `r pocet_odlehlych_kg` druhů jako možná `r render_glossary_term("odlehla-pozorovani", display = "odlehlá pozorování")`. Hranice jsme tehdy počítali v kilogramech a logaritmickou osu jsme použili jen pro čitelnost. Co se stane, když hranice spočítáme až po logaritmování?
+
+```{r}
+#| label: savci-krabicovy-graf-log
+#| echo: true
+#| eval: true
+#| fig-cap: "Tělesná hmotnost savců z první lekce v kilogramech."
+#| fig-alt: "Krabicový graf hmotnosti v kilogramech. Krabice je stlačená u nuly a nad ní leží mnoho bodů označených jako možná odlehlá pozorování."
+
+# Hmotnost savců z první lekce (balíček ggplot2)
+vec_hmotnost <- ggplot2::msleep$bodywt
+
+# Krabicový graf v kilogramech
+boxplot(
+  x = vec_hmotnost,
+  ylab = "Tělesná hmotnost (kg)"
+)
+```
+
+```{r}
+#| label: savci-krabicovy-graf-log-hodnoty
+#| echo: true
+#| eval: true
+#| fig-cap: "Stejní savci po logaritmování hmotnosti."
+#| fig-alt: "Krabicový graf logaritmu hmotnosti. Krabice leží uprostřed rozsahu a žádný bod za vousy neleží."
+
+# Krabicový graf logaritmu hmotnosti
+boxplot(
+  x = log(x = vec_hmotnost),
+  ylab = "Logaritmus tělesné hmotnosti"
+)
+```
+
+Po logaritmování neleží za vousy `r if (pocet_odlehlych_log == 0) "žádný druh" else paste(pocet_odlehlych_log, "druhů")`. Savci označení v první lekci jako možná odlehlá pozorování tedy na logaritmické škále neobvyklí nejsou; leželi jen v dlouhém ocasu pravostranně šikmého rozdělení. Slon nebo velryba jsou skutečně velcí, ale na násobné škále, na které se velikost organismů mění, tolik nevybočují. **Označení odlehlé hodnoty proto závisí na tom, na jaké škále se díváme.**
+:::
+
+
+## Které transformace mění jen měřítko a které i tvar?
+
+| Transformace | Výpočet v R | Mění tvar? | Kdy se hodí |
+|---|---|---|---|
+| změna jednotek | `x * 100` | ne | převod mezi jednotkami |
+| centrování | `x - mean(x)` | ne | intercept pro typickou hodnotu prediktoru |
+| z-skóre | `(x - mean(x)) / sd(x)` nebo `scale(x)` | ne | porovnání veličin v různých jednotkách |
+| odmocnina | `sqrt(x)` | ano, mírně zmenší pravostrannou šikmost | mírně šikmé nezáporné veličiny |
+| přirozený logaritmus | `log(x)` | ano, výrazně zmenší pravostrannou šikmost | kladné veličiny, které se mění násobně |
+
+: Přehled transformací z této části lekce.
+
+Logaritmus má ještě jednu vlastnost, která je pro nás důležitější než souměrnost `r render_glossary_term("histogram", display = "histogramu")`. Mění totiž nejen tvar `r render_glossary_term("rozdeleni", display = "rozdělení")`, ale i **tvar vztahu** mezi proměnnými. K tomu se dostaneme v další části.
+
+# Tvar vztahu
+
+## Jak vypadá vztah plochy a počtu druhů na logaritmických osách?
+
+Vraťme se k ostrovům. Přímka selhala hlavně proto, že malé ostrovy byly namačkané u počátku a o sklonu rozhodoval jediný obr. Co s tímto vztahem udělá logaritmus? Zobrazme stejné ostrovy dvakrát: na původních osách a na osách, kde jsou obě proměnné logaritmované.
+
+```{r}
+#| label: zobrazit-vztah-na-dvou-skalach
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 8.5
+#| fig-height: 4
+#| fig-cap: "Vztah počtu druhů a plochy ostrova. Vlevo na původních osách, vpravo po logaritmování obou proměnných."
+#| fig-alt: "Dva bodové grafy stejných ostrovů. Vlevo je většina bodů namačkaná u počátku a vztah je zakřivený. Vpravo jsou body rozprostřené po celém grafu a leží přibližně podél přímky."
+vec_poradi_skal <-
+  c(
+    "Původní osy: počet druhů a plocha (km²)",
+    "Logaritmus počtu druhů a logaritmus plochy"
+  )
+
+data_dve_skaly <-
+  tibble::tibble(
+    skala = factor(
+      x = rep(x = vec_poradi_skal, each = pocet_ostrovu),
+      levels = vec_poradi_skal
+    ),
+    x = c(
+      data_ostrovy$plocha_km2,
+      log(data_ostrovy$plocha_km2)
+    ),
+    y = c(
+      data_ostrovy$pocet_druhu,
+      log(data_ostrovy$pocet_druhu)
+    )
+  )
+
+ggplot2::ggplot(
+  data = data_dve_skaly,
+  mapping = ggplot2::aes(x = x, y = y)
+) +
+  ggplot2::geom_point(
+    color = barva_hlavni,
+    size = 2.3
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(skala),
+    scales = "free"
+  ) +
+  ggplot2::labs(
+    x = "Plocha ostrova (vlevo v km², vpravo její logaritmus)",
+    y = "Počet druhů (vlevo), jeho logaritmus (vpravo)"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Stejný obrázek pravého panelu získáme i v základním R:
+
+```{r}
+#| label: bodovy-graf-log-log
+#| echo: true
+#| eval: false
+
+# Bodový graf logaritmu počtu druhů podle logaritmu plochy
+plot(
+  x = log(x = data_ostrovy$plocha_km2),
+  y = log(x = data_ostrovy$pocet_druhu),
+  pch = 19,
+  col = "#5D2890",
+  xlab = "Logaritmus plochy",
+  ylab = "Logaritmus počtu druhů"
+)
+```
+
+::: {.box-question title="Co znamená přímka na logaritmických osách?"}
+Na logaritmických osách leží body přibližně podél přímky. Co to znamená pro vztah mezi plochou a počtem druhů? Nápověda: stejný krok na logaritmické ose odpovídá stejnému *násobku* původní hodnoty.
+:::
+
+Vlevo je vztah zakřivený: u malých ostrovů počet druhů roste rychle, u velkých už pomaleji. Vpravo je přibližně přímkový. Na logaritmických osách znamená stejný krok doprava stejný násobek plochy a stejný krok nahoru stejný násobek počtu druhů. **Přímka na logaritmických osách tedy říká: když plochu vynásobíme určitým číslem, počet druhů se vynásobí jiným, stále stejným číslem.** Takovému vztahu se říká **mocninný vztah** (anglicky *power law*). V ekologii se pro ostrovy nazývá *vztah druhů a plochy* (*species–area relationship*).
+
+```{r}
+#| label: korelace-pred-a-po-logaritmu
+#| echo: false
+pearson_puvodni <- stats::cor(data_ostrovy$plocha_km2, data_ostrovy$pocet_druhu)
+pearson_log <- stats::cor(log(data_ostrovy$plocha_km2), log(data_ostrovy$pocet_druhu))
+spearman_puvodni <- stats::cor(data_ostrovy$plocha_km2, data_ostrovy$pocet_druhu, method = "spearman")
+spearman_log <- stats::cor(log(data_ostrovy$plocha_km2), log(data_ostrovy$pocet_druhu), method = "spearman")
+```
+
+::: {.box-data collapse="true" title="Doplňující: co na to Pearsonova a Spearmanova korelace?"}
+V lekci o `r render_glossary_term("korelace", display = "korelaci")` jsme u zakřiveného vztahu viděli, že Spearmanova korelace zůstala vysoká, zatímco Pearsonova byla nižší. Galapágy ukazují proč. Pearsonova korelace plochy a počtu druhů je na původních osách `r formatC(pearson_puvodni, format = "f", digits = 2)` a po logaritmování obou proměnných `r formatC(pearson_log, format = "f", digits = 2)`: měří těsnost kolem **přímky**, a přímka sedí lépe na logaritmických osách. Spearmanova korelace je v obou případech `r formatC(spearman_puvodni, format = "f", digits = 2)`, protože pracuje s pořadím ostrovů a logaritmus pořadí nezmění. **Rozdíl mezi Pearsonovou a Spearmanovou korelací byl tedy upozorněním, že vztah je monotónní, ale není přímkový.** V lekci o korelaci jsme uvedli i druhou možnou příčinu takového rozdílu, vliv několika vzdálených bodů; na Galapágách působí obě, protože na původních osách přímku silně ovlivňuje Isabela.
+:::
+
+
+## Jaké tvary vztahu dávají biologický smysl?
+
+Stejně jako v předchozí lekci sestavíme malou sadu kandidátních modelů a každý z nich zdůvodníme biologicky dříve, než uvidíme jakékoli srovnávací skóre.
+
+Důležitá vlastnost `r render_glossary_term("linearni-model", display = "lineárního modelu")`: **„lineární“ znamená lineární v koeficientech, nikoli nutně přímka v grafu.** Model zůstává lineární, pokud je `r render_glossary_term("odezva", display = "odezva")` součtem koeficientů násobených nějakými hodnotami. Těmi hodnotami mohou být i `log(plocha_km2)` nebo druhá mocnina plochy. Funkce `lm()` proto umí popsat i zakřivený vztah.
+
+
+| Kandidát | Biologické tvrzení | Formule v R |
+|---|---|---|
+| A — přímka | Každý další km² přidá stejný počet druhů. | `pocet_druhu ~ plocha_km2` |
+| B — logaritmus plochy | Každé zdvojnásobení plochy přidá stejný počet druhů. | `pocet_druhu ~ log(plocha_km2)` |
+| C — mocninný vztah | Každé zdvojnásobení plochy vynásobí počet druhů stejným číslem. | `log(pocet_druhu) ~ log(plocha_km2)` |
+| D — kvadratický člen | Počet druhů roste s plochou stále pomaleji, případně se pak obrátí. | `pocet_druhu ~ plocha_km2 + I(plocha_km2^2)` |
+| E — logaritmus odezvy | Každý další km² zvýší počet druhů o stejné procento. | `log(pocet_druhu) ~ plocha_km2` |
+
+: Pět kandidátních tvarů vztahu, definovaných před porovnáním.
+
+Funkce `I()` v kandidátovi D říká R, aby výraz `plocha_km2^2` spočítal jako obyčejnou druhou mocninu. Bez ní by symbol `^` uvnitř formule měl jiný význam.
+
+::: {.box-question title="Který kandidát zní biologicky nejméně věrohodně?"}
+Pro každého kandidáta zkuste říct, zda jeho tvrzení zní rozumně pro ostrov o ploše 0,01 km² i pro ostrov o ploše 4 000 km². Který z nich vám připadá nejméně věrohodný?
+:::
+
+Kandidát A předpokládá, že první km² malého ostrova přidá stejně druhů jako tisící km² velkého. Kandidát D umí vztah ohnout, ale kvadratická křivka je parabola: po vrcholu musí klesat, i když biologický důvod, proč by větší ostrov měl mít méně druhů, nemáme. Kandidáti B a C popisují zpomalující růst pomocí násobků plochy. Kandidát E předpokládá zrychlující exponenciální růst, který by u největších ostrovů předpovídal obrovské počty druhů.
+
+```{r}
+#| label: odhadnout-kandidaty
+#| echo: true
+#| eval: true
+
+# A: stejná přímka jako v části o předpokladech modelu
+mod_a_primka <-
+  lm(
+    formula = pocet_druhu ~ plocha_km2,
+    data = data_ostrovy
+  )
+
+# B: logaritmus plochy
+mod_b_log_plochy <-
+  lm(
+    formula = pocet_druhu ~ log(plocha_km2),
+    data = data_ostrovy
+  )
+
+# C: mocninný vztah, logaritmus obou proměnných
+mod_c_mocninny <-
+  lm(
+    formula = log(pocet_druhu) ~ log(plocha_km2),
+    data = data_ostrovy
+  )
+
+# D: přímka s kvadratickým členem
+mod_d_kvadraticky <-
+  lm(
+    formula = pocet_druhu ~ plocha_km2 + I(plocha_km2^2),
+    data = data_ostrovy
+  )
+
+# E: logaritmus odezvy
+mod_e_log_odezvy <-
+  lm(
+    formula = log(pocet_druhu) ~ plocha_km2,
+    data = data_ostrovy
+  )
+```
+
+Počet druhů je počet, tedy celé nezáporné číslo. Pro taková data existují modely, které s počty pracují přímo; poznáme je v jedné z následujících lekcí. Pro otázku tvaru vztahu nám zde `r render_glossary_term("linearni-model", display = "lineární modely")` s transformacemi stačí.
+
+## Jak se kandidátní křivky shodují s ostrovy?
+
+Modely C a E předpovídají logaritmus počtu druhů. Abychom všech pět kandidátů viděli na stejných osách, převedeme jejich odhady zpět na počet druhů funkcí `exp()`, která je opakem logaritmu.
+
+```{r}
+#| label: spocitat-krivky-kandidatu
+#| echo: false
+vec_poradi_kandidatu <-
+  c(
+    "A — přímka",
+    "B — logaritmus plochy",
+    "C — mocninný vztah",
+    "D — kvadratický člen",
+    "E — logaritmus odezvy"
+  )
+
+data_mrizka_plochy <-
+  tibble::tibble(
+    plocha_km2 = exp(
+      seq(
+        from = log(plocha_min),
+        to = log(plocha_max),
+        length.out = 300
+      )
+    )
+  )
+
+data_krivky_kandidatu <-
+  tibble::tibble(
+    kandidat = rep(x = vec_poradi_kandidatu, each = nrow(data_mrizka_plochy)),
+    plocha_km2 = rep(x = data_mrizka_plochy$plocha_km2, times = 5),
+    pocet_druhu = c(
+      stats::predict(mod_a_primka, newdata = data_mrizka_plochy),
+      stats::predict(mod_b_log_plochy, newdata = data_mrizka_plochy),
+      exp(stats::predict(mod_c_mocninny, newdata = data_mrizka_plochy)),
+      stats::predict(mod_d_kvadraticky, newdata = data_mrizka_plochy),
+      exp(stats::predict(mod_e_log_odezvy, newdata = data_mrizka_plochy))
+    )
+  ) |>
+  dplyr::mutate(
+    kandidat = factor(x = kandidat, levels = vec_poradi_kandidatu)
+  )
+
+koef_kvadraticky <- stats::coef(mod_d_kvadraticky)
+plocha_vrchol_paraboly <-
+  -koef_kvadraticky[["plocha_km2"]] /
+  (2 * koef_kvadraticky[["I(plocha_km2^2)"]])
+
+pocet_ostrovu_za_vrcholem <-
+  sum(data_ostrovy$plocha_km2 > plocha_vrchol_paraboly)
+
+ostrovy_za_vrcholem <-
+  data_ostrovy$ostrov[data_ostrovy$plocha_km2 > plocha_vrchol_paraboly]
+
+cook_max_kvadraticky <- max(stats::cooks.distance(mod_d_kvadraticky))
+```
+
+```{r}
+#| label: zobrazit-krivky-kandidatu
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 9
+#| fig-height: 6
+#| fig-cap: "Pět kandidátních modelů převedených zpět na počet druhů. Body jsou stejné ostrovy ve všech panelech."
+#| fig-alt: "Pět panelů se stejnými body. Přímka A prochází nad většinou malých ostrovů. Křivky B a C rostou rychle u malých ostrovů a pak zpomalují. Parabola D vystoupá a před největším ostrovem začne klesat. Exponenciála E je téměř plochá a na konci prudce stoupá."
+ggplot2::ggplot(
+  data = data_krivky_kandidatu,
+  mapping = ggplot2::aes(
+    x = plocha_km2,
+    y = pocet_druhu
+  )
+) +
+  ggplot2::geom_point(
+    data = data_ostrovy,
+    color = barva_hlavni,
+    size = 1.8,
+    alpha = 0.8
+  ) +
+  ggplot2::geom_line(
+    color = barva_cara,
+    linewidth = 1.1
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(kandidat),
+    nrow = 2
+  ) +
+  ggplot2::coord_cartesian(
+    ylim = c(
+      0,
+      1.1 * max(
+        data_krivky_kandidatu$pocet_druhu[
+          data_krivky_kandidatu$kandidat == "D — kvadratický člen"
+        ]
+      )
+    )
+  ) +
+  ggplot2::labs(
+    x = "Plocha ostrova (km²)",
+    y = "Počet druhů rostlin"
+  ) +
+  ggplot2::theme_bw(base_size = 11)
+```
+
+Přímka A stejně jako dříve vede nad většinou malých ostrovů. Křivky B a C rostou rychle u malých ostrovů a u velkých zpomalují. Parabola D prochází blízko velkých ostrovů, ale má vrchol kolem `r formatC(plocha_vrchol_paraboly, format = "f", digits = 0, big.mark = " ")` km² a dál klesá. Pro větší plochy tedy předpovídá *méně* druhů. Za vrcholem leží `r pocet_ostrovu_za_vrcholem` ostrov (`r ostrovy_za_vrcholem`) a parabola se k němu ohýbá hlavně proto, že tento ostrov na ni má obrovský vliv (`r render_glossary_term("cookova-vzdalenost", display = "Cookova vzdálenost")` `r formatC(cook_max_kvadraticky, format = "f", digits = 1)`). Exponenciála E zůstává téměř plochá a pak prudce stoupá, opačně než data.
+
+```{r}
+#| label: zobrazit-residua-kandidatu
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 9
+#| fig-height: 6
+#| fig-cap: "Residua pěti kandidátů podle jejich odhadnutých hodnot. U kandidátů C a E jsou residua i odhady na logaritmické škále, protože tyto modely předpovídají logaritmus počtu druhů."
+#| fig-alt: "Pět grafů residuí. U A, D a E residua tvoří vějíř nebo oblouk. U B je pás širší vpravo. U C leží residua v přibližně stejně širokém vodorovném pásu kolem nuly."
+list_kandidati <-
+  list(
+    mod_a_primka,
+    mod_b_log_plochy,
+    mod_c_mocninny,
+    mod_d_kvadraticky,
+    mod_e_log_odezvy
+  )
+
+data_residua_kandidatu <-
+  purrr::map2(
+    .x = list_kandidati,
+    .y = vec_poradi_kandidatu,
+    .f = ~ tibble::tibble(
+      kandidat = .y,
+      odhad = stats::fitted(.x),
+      residuum = stats::residuals(.x)
+    )
+  ) |>
+  dplyr::bind_rows() |>
+  dplyr::mutate(
+    kandidat = factor(x = kandidat, levels = vec_poradi_kandidatu)
+  )
+
+ggplot2::ggplot(
+  data = data_residua_kandidatu,
+  mapping = ggplot2::aes(
+    x = odhad,
+    y = residuum
+  )
+) +
+  ggplot2::geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    color = barva_text
+  ) +
+  ggplot2::geom_point(
+    color = barva_hlavni,
+    size = 1.8,
+    alpha = 0.8
+  ) +
+  ggplot2::facet_wrap(
+    facets = ggplot2::vars(kandidat),
+    scales = "free",
+    nrow = 2
+  ) +
+  ggplot2::labs(
+    x = "Odhadnutá hodnota",
+    y = "Residuum"
+  ) +
+  ggplot2::theme_bw(base_size = 11)
+```
+
+Nejvyrovnanější pás `r render_glossary_term("residuum", display = "residuí")` kolem nuly má zatím kandidát C; podrobně jeho residua zkontrolujeme po srovnání AIC. U ostatních zůstávají vějíře nebo oblouky.
+
+```{r}
+#| label: shapiro-odezva-a-model-b
+#| echo: false
+p_shapiro_druhy_b <-
+  stats::shapiro.test(data_ostrovy$pocet_druhu)$p.value
+
+p_shapiro_model_b <-
+  stats::shapiro.test(stats::residuals(mod_b_log_plochy))$p.value
+```
+
+::: {.box-rule title="Šikmá odezva nemusí znamenat šikmá residua"}
+Model B používá jako `r render_glossary_term("odezva", display = "odezvu")` přímo počet druhů, který je silně pravostranně šikmý (Shapiro–Wilkův test samotného počtu druhů: p `r sub("<", "< ", format.pval(p_shapiro_druhy_b, eps = 0.001, digits = 2))`). U residuí modelu B test odchylku od normálního tvaru přesto neprokázal (p = `r formatC(p_shapiro_model_b, format = "f", digits = 2)`). Šikmost odezvy totiž z velké části vysvětluje šikmý `r render_glossary_term("prediktor", display = "prediktor")`. **Proto kontrolujeme residua, nikoli samotnou odezvu.** Za lepší model to model B nedělá: jeho residua se směrem doprava rozšiřují.
+:::
+
+Grafy residuí však samy neříkají, o kolik je jeden model lepší než druhý. K tomu jsme v předchozí lekci používali `r render_glossary_term("aic", display = "AIC")`.
+
+
+## Můžeme porovnat AIC modelu pro počet druhů a pro jeho logaritmus?
+
+```{r}
+#| label: spocitat-aic-kandidatu
+#| echo: false
+data_aic_kandidatu <-
+  tibble::tibble(
+    kandidat = vec_poradi_kandidatu,
+    odezva = c(
+      "počet druhů",
+      "počet druhů",
+      "logaritmus počtu druhů",
+      "počet druhů",
+      "logaritmus počtu druhů"
+    ),
+    aic = purrr::map_dbl(.x = list_kandidati, .f = stats::AIC)
+  )
+
+aic_a <- data_aic_kandidatu$aic[1]
+aic_b <- data_aic_kandidatu$aic[2]
+aic_c <- data_aic_kandidatu$aic[3]
+aic_d <- data_aic_kandidatu$aic[4]
+aic_e <- data_aic_kandidatu$aic[5]
+```
+
+::: {.box-question title="Který model má nejnižší AIC?"}
+Kandidát A má `r render_glossary_term("aic", display = "AIC")` `r formatC(aic_a, format = "f", digits = 1)` a kandidát C má AIC `r formatC(aic_c, format = "f", digits = 1)`. Znamená to, že je model C mnohem lepší?
+:::
+
+Ne. Rozdíl `r formatC(aic_a - aic_c, format = "f", digits = 1)` vypadá obrovsky, ale nic neříká. Pravidlo z předchozí lekce zní: **AIC lze porovnávat jen mezi modely se stejnou `r render_glossary_term("odezva", display = "odezvou")` na stejných `r render_glossary_term("pozorovani", display = "pozorováních")`.** Model A popisuje počet druhů, model C jeho logaritmus. Logaritmus stlačí velké hodnoty, takže `r render_glossary_term("residuum", display = "residua")` modelu C jsou čísla v úplně jiném měřítku než residua modelu A. AIC by se změnilo i tehdy, kdybychom použili logaritmus o jiném základu, aniž by se model jakkoli zlepšil. Stejné omezení platí pro R².
+
+Kandidáty proto porovnáme ve dvou oddělených skupinách:
+
+```{r}
+#| label: tabulka-aic-kandidatu
+#| echo: false
+knitr::kable(
+  x = data_aic_kandidatu |>
+    dplyr::arrange(odezva, aic),
+  digits = 1,
+  col.names = c("Kandidát", "Odezva", "AIC"),
+  caption = "AIC pěti kandidátů. Porovnávat lze jen řádky se stejnou odezvou."
+)
+```
+
+**Mezi modely pro počet druhů** (A, B, D) má nejnižší AIC kvadratický model D (`r formatC(aic_d, format = "f", digits = 1)`). Z předchozí kapitoly ale víme, že jeho tvar biologicky nedává smysl, jeho residua netvoří vyrovnaný pás a jeho průběh určuje jediný ostrov. **Nejnižší AIC neznamená, že model je biologicky obhajitelný.** AIC porovnává jen shodu a složitost v rámci zvolených kandidátů.
+
+**Mezi modely pro logaritmus počtu druhů** (C, E) má mocninný vztah C mnohem nižší AIC (`r formatC(aic_c, format = "f", digits = 1)`) než model E (`r formatC(aic_e, format = "f", digits = 1)`).
+
+```{r}
+#| label: zkusit-zakriveni-mocninneho-vztahu
+#| echo: false
+mod_c_kvadraticky <-
+  stats::lm(
+    formula = log(pocet_druhu) ~ log(plocha_km2) + I(log(plocha_km2)^2),
+    data = data_ostrovy
+  )
+
+aic_c_kvadraticky <- stats::AIC(mod_c_kvadraticky)
+r2_c <- summary(mod_c_mocninny)$r.squared
+r2_c_kvadraticky <- summary(mod_c_kvadraticky)$r.squared
+```
+
+Jako kontrolu, nikoli jako dalšího kandidáta, se můžeme ještě zeptat, zda mocninný vztah sám nepotřebuje zakřivení, tedy zda body na logaritmických osách neleží spíš podél oblouku než přímky. Přidáme-li k modelu C kvadratický člen `I(log(plocha_km2)^2)`, R² se změní jen z `r formatC(r2_c, format = "f", digits = 3)` na `r formatC(r2_c_kvadraticky, format = "f", digits = 3)` a AIC vzroste na `r formatC(aic_c_kvadraticky, format = "f", digits = 1)`. Dodatečný koeficient si své místo nezaslouží.
+
+## Pomohl logaritmus také residuím?
+
+Mocninný vztah C dává biologický smysl a mezi modely pro logaritmus počtu druhů vychází nejlépe. Mřížka residuí všech kandidátů naznačila, že jeho `r render_glossary_term("residuum", display = "residua")` jsou vyrovnaná. Podrobně je zkontrolujeme stejnými nástroji jako u přímky.
+
+```{r}
+#| label: residua-mocninneho-vztahu
+#| echo: true
+#| eval: true
+#| fig-cap: "Residua mocninného vztahu podle odhadnutého logaritmu počtu druhů."
+#| fig-alt: "Graf residuí, ve kterém body tvoří přibližně stejně široký vodorovný pás kolem nuly bez zřetelného oblouku nebo vějíře."
+
+# Residua podle odhadnutých hodnot
+plot(
+  x = fitted(object = mod_c_mocninny),
+  y = residuals(object = mod_c_mocninny),
+  pch = 19,
+  col = "#5D2890",
+  xlab = "Odhadnutý logaritmus počtu druhů",
+  ylab = "Residuum"
+)
+
+abline(
+  h = 0,
+  col = "#2E2E2E",
+  lty = 2
+)
+```
+
+```{r}
+#| label: histogram-residui-mocninneho-vztahu
+#| echo: true
+#| eval: true
+#| fig-cap: "Histogram residuí mocninného vztahu."
+#| fig-alt: "Histogram residuí rozložených přibližně souměrně kolem nuly bez dlouhého ocasu."
+
+# Histogram residuí mocninného vztahu
+hist(
+  x = residuals(object = mod_c_mocninny),
+  breaks = 10,
+  col = "#86579E",
+  border = "white",
+  main = "",
+  xlab = "Residuum (logaritmus počtu druhů)",
+  ylab = "Počet ostrovů"
+)
+```
+
+```{r}
+#| label: qq-mocninneho-vztahu
+#| echo: true
+#| eval: true
+#| fig-cap: "Q–Q graf residuí mocninného vztahu."
+#| fig-alt: "Q–Q graf, ve kterém body leží blízko přímky po celé délce, jen s malým kolísáním na koncích."
+
+# Q–Q graf residuí
+qqnorm(
+  y = residuals(object = mod_c_mocninny),
+  pch = 19,
+  main = "",
+  xlab = "Teoretický kvantil normálního rozdělení",
+  ylab = "Residuum"
+)
+
+qqline(
+  y = residuals(object = mod_c_mocninny),
+  col = "#D55E00",
+  lwd = 2
+)
+
+# Doplňující test normality residuí
+shapiro.test(x = residuals(object = mod_c_mocninny))
+
+# Největší vliv jednoho ostrova
+max(cooks.distance(model = mod_c_mocninny))
+```
+
+```{r}
+#| label: ulozit-diagnostiku-mocninneho-vztahu
+#| echo: false
+p_shapiro_mocninny <-
+  stats::shapiro.test(stats::residuals(mod_c_mocninny))$p.value
+
+cook_max_mocninny <- max(stats::cooks.distance(mod_c_mocninny))
+
+p_shapiro_druhy <-
+  stats::shapiro.test(data_ostrovy$pocet_druhu)$p.value
+
+p_shapiro_log_plochy <-
+  stats::shapiro.test(stats::residuals(mod_b_log_plochy))$p.value
+```
+
+::: {.box-question title="Zůstal v residuích nějaký vzor?"}
+Porovnejte oba grafy s grafy residuí přímky. Vidíte ještě vějíř, oblouk nebo dlouhý ocas?
+:::
+
+`r render_glossary_term("residuum", display = "Residua")` tvoří přibližně stejně široký pás kolem nuly, `r render_glossary_term("qq-graf", display = "Q–Q graf")` je blízko přímky a Shapiro–Wilkův test odchylku neprokázal (p = `r formatC(p_shapiro_mocninny, format = "f", digits = 2)`). Žádný ostrov už model neovládá: největší `r render_glossary_term("cookova-vzdalenost", display = "Cookova vzdálenost")` je `r formatC(cook_max_mocninny, format = "f", digits = 2)`, oproti `r formatC(cook_nejvlivnejsi, format = "f", digits = 1)` u přímky. Protože máme jen `r pocet_ostrovu` ostrovů, čteme velkou `r render_glossary_term("p-hodnota", display = "p-hodnotu")` opatrně; přesvědčivé je hlavně to, že všechny tři kontroly ukazují stejným směrem.
+
+Zmizel i vějíř, ve kterém se residua přímky směrem doprava rozšiřovala. Logaritmus převádí stejné *relativní* rozptýlení (například o několik desítek procent nahoru i dolů) na přibližně stejné absolutní rozptýlení na logaritmické škále. V lekci o porovnání více skupin jsme u rozdílné variability ve skupinách upozornili, že diagnostický graf nemá být automatickým příkazem k transformaci. Zde transformaci nepoužíváme kvůli grafu, ale proto, že biologie předpovídá násobné změny; vyrovnaná residua jsou toho důsledkem.
+
+
+
+# Interpretace po transformaci
+
+## Kolikrát víc druhů má dvakrát větší ostrov?
+
+Mocninný vztah dává odpověď na hlavní otázku. Odpověď se skrývá v jeho koeficientech.
+
+```{r}
+#| label: koeficienty-mocninneho-vztahu
+#| echo: true
+#| eval: true
+
+# Koeficienty a jejich 95% intervaly spolehlivosti
+coef(object = mod_c_mocninny)
+
+confint(
+  object = mod_c_mocninny,
+  level = 0.95
+)
+```
+
+```{r}
+#| label: ulozit-koeficienty-mocninneho-vztahu
+#| echo: false
+koef_mocninny <- stats::coef(mod_c_mocninny)
+interval_mocninny <- stats::confint(mod_c_mocninny, level = 0.95)
+
+exponent <- koef_mocninny[["log(plocha_km2)"]]
+exponent_dolni <- interval_mocninny["log(plocha_km2)", 1]
+exponent_horni <- interval_mocninny["log(plocha_km2)", 2]
+
+nasobek_plochy <- 2
+nasobek_druhu <- nasobek_plochy^exponent
+nasobek_druhu_dolni <- nasobek_plochy^exponent_dolni
+nasobek_druhu_horni <- nasobek_plochy^exponent_horni
+
+desetinasobek_plochy <- 10
+nasobek_druhu_desetkrat <- desetinasobek_plochy^exponent
+```
+
+Model říká:
+
+$$
+\text{logaritmus počtu druhů} =
+\text{intercept} + \text{sklon} \times \text{logaritmus plochy}.
+$$
+
+`r render_glossary_term("sklon", display = "Sklon")` `r formatC(exponent, format = "f", digits = 3)` neudává počet druhů na km². Na logaritmických osách znamená, že **když se logaritmus plochy zvětší o jednotku, logaritmus počtu druhů se zvětší o `r formatC(exponent, format = "f", digits = 3)`**. To je pro biologa málo názorné. Přeložíme to proto zpět do násobků. Zdvojnásobení plochy zvětší logaritmus plochy o $\ln(2)$, a tedy logaritmus počtu druhů o sklon × $\ln(2)$. Funkce `exp()`, opak logaritmu, převede tento přírůstek zpět na násobek: $\exp(`r formatC(exponent, format = "f", digits = 3)` \times `r formatC(log(nasobek_plochy), format = "f", digits = 3)`) = \exp(`r formatC(exponent * log(nasobek_plochy), format = "f", digits = 3)`) = `r formatC(exp(exponent * log(nasobek_plochy)), format = "f", digits = 2)`$. Stejné číslo dostaneme jednodušeji jako $`r nasobek_plochy`^{`r formatC(exponent, format = "f", digits = 3)`}$. Slovy:
+
+$$
+\text{násobek počtu druhů} =
+\text{násobek plochy}^{\,\text{sklon}}.
+$$
+
+Pro dvojnásobnou plochu:
+
+$$
+\begin{align}
+\text{násobek počtu druhů}
+&= `r nasobek_plochy`^{\,`r formatC(exponent, format = "f", digits = 3)`} \\
+&= `r formatC(nasobek_druhu, format = "f", digits = 2)`.
+\end{align}
+$$
+
+**Ostrov s dvojnásobnou plochou má podle modelu typicky asi `r formatC(nasobek_druhu, format = "f", digits = 2)`krát více druhů**, tedy zhruba o `r formatC(100 * (nasobek_druhu - 1), format = "f", digits = 0)` % více, nikoli dvakrát více. 95% `r render_glossary_term("interval-spolehlivosti", display = "interval spolehlivosti")` sklonu (`r formatC(exponent_dolni, format = "f", digits = 2)` až `r formatC(exponent_horni, format = "f", digits = 2)`) odpovídá násobku `r formatC(nasobek_druhu_dolni, format = "f", digits = 2)` až `r formatC(nasobek_druhu_horni, format = "f", digits = 2)`.
+
+Obecně mocninný vztah zapisujeme:
+
+$$
+S = c \cdot A^{b}
+\qquad\Longleftrightarrow\qquad
+\ln(S) = \ln(c) + b \cdot \ln(A).
+$$
+
+Symbol $S$ je typický počet druhů, $A$ plocha ostrova, $b$ **exponent** (sklon na logaritmických osách) a $c$ počet druhů očekávaný na ostrově o ploše 1 km² (jeho logaritmus je `r render_glossary_term("intercept", display = "intercept")`). Při vynásobení plochy číslem $k$ se počet druhů vynásobí číslem $k^b$. V ekologické literatuře se tento exponent obvykle značí $z$ (nezaměňovat se z-skóre); pro souostroví se jeho odhady nejčastěji pohybují zhruba mezi 0,2 a 0,4 (Rosenzweig 1995, *Species Diversity in Space and Time*, Cambridge University Press).
+
+::: {.box-question title="Desetkrát větší ostrov"}
+Spočítejte z exponentu, kolikrát více druhů má podle modelu typicky ostrov s desetinásobnou plochou. Porovnejte výsledek se svým odhadem ze začátku lekce.
+:::
+
+::: {.box-result title="Řešení" collapse="true"}
+$`r desetinasobek_plochy`^{\,`r formatC(exponent, format = "f", digits = 3)`} = `r formatC(nasobek_druhu_desetkrat, format = "f", digits = 2)`$. Desetkrát větší ostrov má typicky asi `r formatC(nasobek_druhu_desetkrat, format = "f", digits = 2)`krát více druhů.
+:::
+
+```{r}
+#| label: predikce-typickych-ostrovu
+#| echo: true
+#| eval: true
+
+# Typické počty druhů pro vybrané plochy ostrovů
+data_nove_plochy <-
+  data.frame(plocha_km2 = c(1, 10, 100, 1000))
+
+# Model předpovídá logaritmus; exp() jej převede zpět na počet druhů
+exp(
+  x = predict(
+    object = mod_c_mocninny,
+    newdata = data_nove_plochy
+  )
+)
+```
+
+::: {.box-warning title="Zpětný převod dává typickou, ne průměrnou hodnotu"}
+Model C odhaduje `r render_glossary_term("prumer", display = "průměr")` *logaritmu* počtu druhů. Po převodu funkcí `exp()` proto nedostaneme průměrný počet druhů, ale hodnotu blízkou `r render_glossary_term("median", display = "mediánu")`: typický ostrov dané plochy, kterého polovina ostrovů přesahuje a polovina nedosahuje. U pravostranně šikmých dat je průměr vyšší než tato typická hodnota. Číslo, které vznikne zpětným převodem průměru logaritmů, se nazývá **geometrický průměr**. U počtu druhů na Galapágách je geometrický průměr `r formatC(exp(mean(log(data_ostrovy$pocet_druhu))), format = "f", digits = 1)`, medián `r median_druhu` a aritmetický průměr `r formatC(prumer_druhu, format = "f", digits = 1)`. V první lekci jsme pro asymetrická data doporučili medián; u dat, která jsou po logaritmování přibližně souměrná (log-normální), leží geometrický průměr blízko mediánu a přirozeně vzniká na logaritmické škále.
+:::
+
+## Jak číst koeficient, když logaritmujeme jen jednu stranu?
+
+Mocninný vztah logaritmuje obě strany. Při logaritmování jen jedné strany se mění i význam koeficientu. Ukážeme to na kandidátech B, E a D, i když nevyšli jako nejlepší.
+
+```{r}
+#| label: ulozit-koeficienty-jedne-strany
+#| echo: false
+sklon_b <- stats::coef(mod_b_log_plochy)[["log(plocha_km2)"]]
+prirustek_na_zdvojnasobeni <- sklon_b * log(nasobek_plochy)
+
+sklon_e <- stats::coef(mod_e_log_odezvy)[["plocha_km2"]]
+nasobek_na_sto_km2 <- exp(sto_km2 * sklon_e)
+```
+
+::: {.box-question title="Stejný přírůstek, nebo stejný násobek?"}
+Model B tvrdí, že každé zdvojnásobení plochy přidá stejný počet druhů. Je takový přírůstek stejně velká změna pro ostrov s několika druhy a pro ostrov se stovkami druhů?
+:::
+
+**Logaritmus jen `r render_glossary_term("prediktor", display = "prediktoru")` (B: `pocet_druhu ~ log(plocha_km2)`).** `r render_glossary_term("sklon", display = "Sklon")` `r formatC(sklon_b, format = "f", digits = 2)` udává počet druhů přidaný při zvětšení logaritmu plochy o 1. Názornější je přepočet na zdvojnásobení plochy:
+
+$$
+\text{přírůstek druhů na zdvojnásobení plochy} = \text{sklon} \times \ln(2).
+$$
+
+$$
+`r formatC(sklon_b, format = "f", digits = 2)` \times `r formatC(log(nasobek_plochy), format = "f", digits = 3)` = `r formatC(prirustek_na_zdvojnasobeni, format = "f", digits = 1)`.
+$$
+
+Podle modelu B přidá každé zdvojnásobení plochy asi `r formatC(prirustek_na_zdvojnasobeni, format = "f", digits = 1)` druhu, ať jde o ostrov malý nebo velký. Pro ostrov s několika druhy je to velká relativní změna, pro ostrov se stovkami druhů malá. Mocninný vztah C naopak předpovídá při každém zdvojnásobení stejnou *relativní* změnu. Obecně: přírůstek `r render_glossary_term("odezva", display = "odezvy")` na $k$-násobek prediktoru je $b \cdot \ln(k)$, kde $b$ je sklon.
+
+**Logaritmus jen odezvy (E: `log(pocet_druhu) ~ plocha_km2`).** Sklon `r formatC(sklon_e, format = "f", digits = 5)` udává změnu logaritmu počtu druhů na 1 km². Po zpětném převodu se z něj stává násobek:
+
+$$
+\text{násobek počtu druhů na `r sto_km2` km²} = \exp(`r sto_km2` \times \text{sklon}).
+$$
+
+$$
+\exp(`r sto_km2` \times `r formatC(sklon_e, format = "f", digits = 5)`) = `r formatC(nasobek_na_sto_km2, format = "f", digits = 3)`.
+$$
+
+Podle modelu E zvýší každých `r sto_km2` km² počet druhů asi o `r formatC(100 * (nasobek_na_sto_km2 - 1), format = "f", digits = 1)` %. Obecně: při změně prediktoru o $\Delta x$ se odezva vynásobí číslem $\exp(b \cdot \Delta x)$. Pro malé sklony je $100 \cdot b$ přibližně procentní změna na jednotku prediktoru, protože pro malá $b$ platí $\exp(b) \approx 1 + b$.
+
+**Kvadratický člen (D).** Model D nemá jeden sklon. Jak rychle počet druhů s plochou roste, se mění podél křivky: u malých ploch rychle, pak stále pomaleji, až kolem `r formatC(plocha_vrchol_paraboly, format = "f", digits = 0, big.mark = " ")` km² přestane růst a začne klesat. Koeficienty kvadratického modelu proto nečteme jednotlivě. Čteme predikce pro konkrétní plochy a místo vrcholu z grafu. Předpovědi mimo rozsah pozorovaných ploch jsou u paraboly obzvlášť riskantní, protože křivka pokračuje dolů, i když k tomu data nedávají žádný důvod.
+
+::: {.box-rule title="Jak číst koeficienty po transformaci"}
+| Model | Co znamená sklon |
+|---|---|
+| `y ~ x` | změna `y` o sklon na jednotku `x` |
+| `y ~ log(x)` | změna `y` o sklon × ln(2) na každé zdvojnásobení `x` |
+| `log(y) ~ x` | vynásobení `y` číslem exp(sklon) na jednotku `x`; přibližně 100 × sklon % pro malé sklony |
+| `log(y) ~ log(x)` | vynásobení `y` číslem 2^sklon na každé zdvojnásobení `x` |
+| `y ~ x + I(x^2)` | sklon se mění podél křivky; čteme predikce, ne jednotlivé koeficienty |
+:::
+
+## Jak rychle roste počet druhů s plochou ostrova?
+
+::: {.box-result title="Odpověď na hlavní otázku"}
+Počet druhů rostlin na Galapágách roste s plochou ostrova podle mocninného vztahu s exponentem asi `r formatC(exponent, format = "f", digits = 2)` (95% `r render_glossary_term("interval-spolehlivosti", display = "interval spolehlivosti")` `r formatC(exponent_dolni, format = "f", digits = 2)` až `r formatC(exponent_horni, format = "f", digits = 2)`). Dvojnásobná plocha znamená typicky asi `r formatC(nasobek_druhu, format = "f", digits = 2)`krát více druhů a desetinásobná plocha asi `r formatC(nasobek_druhu_desetkrat, format = "f", digits = 2)`krát více. **Počet druhů tedy roste s plochou, ale mnohem pomaleji než plocha samotná.**
+:::
+
+Tento závěr podporují tři argumenty, které ale vycházejí ze stejných ostrovů: biologicky zdůvodněný tvar vztahu, `r render_glossary_term("residuum", display = "residua")` bez systematického vzoru a nejnižší `r render_glossary_term("aic", display = "AIC")` mezi modely pro logaritmus počtu druhů. S modely pro samotný počet druhů (A, B, D) model C pomocí AIC porovnat nelze; od nich jej odlišují biologický smysl a residua. Závěr má také jasná omezení:
+
+- Máme jen `r pocet_ostrovu` ostrovů, takže diagnostické grafy i test normality mají omezenou citlivost.
+- Odezvou je počet. Model, který s počty pracuje přímo, by mohl lépe popsat malé ostrovy s několika druhy.
+- Ostrovy jednoho souostroví nejsou úplně nezávislé: sdílejí dodavatelské ostrovy, klima i historii osídlení.
+- Plocha souvisí s dalšími vlastnostmi ostrova, například s nadmořskou výškou a rozmanitostí prostředí. Mocninný vztah popisuje souvislost, nikoli to, že plocha sama o sobě druhy „vytváří“.
+
+::: {.box-question title="Napište vlastní závěr"}
+Shrňte ve dvou větách, co jste se o vztahu plochy a počtu druhů dozvěděli. Uveďte jedno číslo s interpretací a jedno omezení.
+:::
+
+::: {.box-result title="Příklad odpovědi" collapse="true"}
+Na Galapágách má ostrov s dvojnásobnou plochou typicky asi o `r formatC(100 * (nasobek_druhu - 1), format = "f", digits = 0)` % více druhů rostlin, jak ukazuje mocninný vztah s exponentem `r formatC(exponent, format = "f", digits = 2)`. Závěr vychází z pouhých `r pocet_ostrovu` ostrovů jednoho souostroví, takže jeho přenos na jiná souostroví je nejistý.
+:::
+
+Úvodní otázku o stromech z předchozí lekce zbývá uzavřít. Stejný postup můžeme vyzkoušet i na ní.
+
+```{r}
+#| label: stromy-kandidati-tvaru
+#| echo: false
+data_stromy$druh_stromu <- factor(data_stromy$druh_stromu)
+
+mod_stromy_log <-
+  stats::lm(
+    formula = vyska_stromu_m ~ log(prumer_kmene_cm) + druh_stromu,
+    data = data_stromy
+  )
+
+mod_stromy_kvadraticky <-
+  stats::lm(
+    formula = vyska_stromu_m ~ prumer_kmene_cm + I(prumer_kmene_cm^2) + druh_stromu,
+    data = data_stromy
+  )
+
+aic_stromy_primka <- stats::AIC(mod_stromy_aditivni)
+aic_stromy_log <- stats::AIC(mod_stromy_log)
+aic_stromy_kvadraticky <- stats::AIC(mod_stromy_kvadraticky)
+
+koef_stromy_kvadraticky <- stats::coef(mod_stromy_kvadraticky)
+prumer_vrchol_stromy <-
+  -koef_stromy_kvadraticky[["prumer_kmene_cm"]] /
+  (2 * koef_stromy_kvadraticky[["I(prumer_kmene_cm^2)"]])
+pocet_stromu_za_vrcholem <-
+  sum(data_stromy$prumer_kmene_cm > prumer_vrchol_stromy)
+
+nasobek_prumeru <- 2
+
+vyska_na_zdvojnasobeni <-
+  stats::coef(mod_stromy_log)[["log(prumer_kmene_cm)"]] * log(nasobek_prumeru)
+
+data_residua_stromu_dva <-
+  dplyr::bind_rows(
+    tibble::tibble(
+      model = "Přímka (předchozí lekce)",
+      odhad = stats::fitted(mod_stromy_aditivni),
+      residuum = stats::residuals(mod_stromy_aditivni)
+    ),
+    tibble::tibble(
+      model = "Logaritmus průměru kmene",
+      odhad = stats::fitted(mod_stromy_log),
+      residuum = stats::residuals(mod_stromy_log)
+    )
+  ) |>
+  dplyr::mutate(
+    model = factor(
+      x = model,
+      levels = c("Přímka (předchozí lekce)", "Logaritmus průměru kmene")
+    )
+  )
+```
+
+::: {.box-data title="Návrat ke stromům: zmizí oblouk v residuích?"}
+Na začátku lekce jsme si připomněli oblouk v residuích aditivního modelu pro výšku jehličnanů. Stejně jako u ostrovů zvažme biologicky věrohodný tvar: výška stromu roste s průměrem kmene stále pomaleji, protože strom nemůže růst do výšky donekonečna. Takové zpomalení vyjadřuje logaritmus průměru kmene.
+
+```{r}
+#| label: stromy-log-prumeru
+#| echo: true
+#| eval: true
+
+# Načteme stromy z předchozí lekce
+data_stromy_l <-
+  read.csv(
+    file = here::here("data", "allometrie_stromu.csv"),
+    stringsAsFactors = TRUE
+  )
+
+# Aditivní model z předchozí lekce
+mod_stromy_primka <-
+  lm(
+    formula = vyska_stromu_m ~ prumer_kmene_cm + druh_stromu,
+    data = data_stromy_l
+  )
+
+# Stejný model s logaritmem průměru kmene
+mod_stromy_log_prumer <-
+  lm(
+    formula = vyska_stromu_m ~ log(prumer_kmene_cm) + druh_stromu,
+    data = data_stromy_l
+  )
+
+# Oba modely mají stejnou odezvu, takže AIC můžeme porovnat
+AIC(object = mod_stromy_primka)
+AIC(object = mod_stromy_log_prumer)
+```
+
+```{r}
+#| label: zobrazit-residua-stromu-dva
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 8.5
+#| fig-height: 3.6
+#| fig-cap: "Residua dvou modelů výšky stromů podle odhadnuté výšky. Oranžová křivka pouze vyhlazuje průběh bodů."
+#| fig-alt: "Dva grafy residuí. Vlevo tvoří vyhlazená křivka zřetelný oblouk. Vpravo je vyhlazená křivka téměř vodorovná kolem nuly."
+ggplot2::ggplot(
+  data = data_residua_stromu_dva,
+  mapping = ggplot2::aes(x = odhad, y = residuum)
+) +
+  ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = barva_text) +
+  ggplot2::geom_point(color = barva_hlavni, size = 2, alpha = 0.8) +
+  ggplot2::geom_smooth(
+    method = "loess",
+    formula = y ~ x,
+    se = FALSE,
+    color = barva_cara,
+    linewidth = 1.1
+  ) +
+  ggplot2::facet_wrap(facets = ggplot2::vars(model)) +
+  ggplot2::labs(
+    x = "Odhadnutá výška stromu (m)",
+    y = "Residuum (m)"
+  ) +
+  ggplot2::theme_bw(base_size = 12)
+```
+
+Oblouk se výrazně zploštil, ale nezmizel úplně: u nejmenších stromů zůstává systematická odchylka, protože model jejich výšku podhodnocuje až o několik metrů. AIC kleslo z `r formatC(aic_stromy_primka, format = "f", digits = 1)` na `r formatC(aic_stromy_log, format = "f", digits = 1)`. Odpověď na otázku z předchozí lekce tedy zní: **tvar vztahu byl hlavní, i když ne jediný problém.** Nejmenší stromy by si zasloužily další pozornost, například jiný tvar vztahu nebo kontrolu jejich měření. Podle nového modelu přidá každé zdvojnásobení průměru kmene stromu asi `r formatC(vyska_na_zdvojnasobeni, format = "f", digits = 1)` m výšky.
+
+Kvadratický model by měl AIC ještě o něco nižší (`r formatC(aic_stromy_kvadraticky, format = "f", digits = 1)`). Jeho parabola má ale vrchol u průměru kmene asi `r formatC(prumer_vrchol_stromy, format = "f", digits = 0)` cm a pro `r pocet_stromu_za_vrcholem` nejširších stromů předpovídá, že jsou *nižší* než užší stromy. Je to stejná lekce jako u ostrovů: nejnižší AIC nenahradí biologickou úvahu o tvaru vztahu.
+:::
+
+## Kdy transformaci použít a kdy ne?
+
+Postup z této lekce lze použít i na jiná data:
+
+1. Položte biologickou otázku a prohlédněte data, včetně tvaru `r render_glossary_term("rozdeleni", display = "rozdělení")` hlavních proměnných.
+2. Odhadněte nejjednodušší rozumný model a zkontrolujte jeho `r render_glossary_term("residuum", display = "residua")`: graf podle odhadnutých hodnot, `r render_glossary_term("qq-graf", display = "Q–Q graf")` a vliv jednotlivých `r render_glossary_term("pozorovani", display = "pozorování")`. Test normality čtěte až po grafech a s ohledem na počet pozorování.
+3. Pokud residua ukazují systematický vzor, zeptejte se, jaký tvar vztahu předpovídá biologie: stejný přírůstek, stejný násobek, zpomalující růst, nebo optimum?
+4. Převeďte biologická tvrzení na malou sadu kandidátních formulí s `log()` nebo `I(x^2)`.
+5. Porovnejte kandidáty na původní škále v grafu, pomocí residuí a pomocí `r render_glossary_term("aic", display = "AIC")`, ale AIC jen mezi modely se stejnou `r render_glossary_term("odezva", display = "odezvou")`.
+6. Výsledek interpretujte v původních jednotkách: násobky, přírůstky na zdvojnásobení, procenta.
+
+::: {.box-warning title="Transformace není rituál"}
+`r render_glossary_term("transformace", display = "Transformaci")` volíme proto, že vyjadřuje biologické tvrzení o vztahu, nikoli proto, aby test normality vrátil velkou `r render_glossary_term("p-hodnota", display = "p-hodnotu")`. Lineární transformace (z-skóre, centrování) tvar rozdělení neopraví nikdy. A pokud šikmá je jen odezva nebo `r render_glossary_term("prediktor", display = "prediktor")`, ale residua jsou v pořádku, není co opravovat kvůli normalitě. Vlivná pozorování, jako byla Isabela u přímky, ale sledujeme vždy.
+:::
+
+::: {.box-data title="Jsou ostrovy jednoho souostroví nezávislá pozorování?"}
+Všech `r pocet_ostrovu` ostrovů leží v jednom souostroví. Sousední ostrovy si vyměňují semena, sdílejí podnebí a mají společnou historii. Jsou to opravdu `r pocet_ostrovu` nezávislých kousků informace? Co když data obsahují měření ze stejných lokalit, bloků nebo jedinců? Těmito otázkami se budeme zabývat v následující lekci. Později se také vrátíme k počtům druhů a ukážeme modely, které s počty a podíly pracují přímo, bez transformace.
+:::
+
+# Shrnutí {.unnumbered}
+
+- Tvar `r render_glossary_term("rozdeleni", display = "rozdělení")` popisujeme slovy (souměrné, pravostranně a levostranně šikmé, těžké konce, dva vrcholy, omezené hodnoty), `r render_glossary_term("histogram", display = "histogramem")` a `r render_glossary_term("qq-graf", display = "Q–Q grafem")`.
+- Mnoho biologických veličin je pravostranně šikmých, protože jsou zdola omezené nulou nebo vznikají násobením.
+- `r render_glossary_term("linearni-model", display = "Lineární model")` předpokládá přibližně normální rozdělení **`r render_glossary_term("residuum", display = "residuí")`**, nikoli `r render_glossary_term("odezva", display = "odezvy")` nebo `r render_glossary_term("prediktor", display = "prediktorů")`. Test normality residuí doplňuje Q–Q graf a jeho výsledek závisí na počtu `r render_glossary_term("pozorovani", display = "pozorování")`.
+- Změna jednotek, centrování a z-skóre mění jen polohu a měřítko; tvar rozdělení zachovají. Logaritmus a odmocnina mění tvar.
+- Logaritmus převádí stejné násobky na stejné kroky, a proto umí z mocninného vztahu udělat přímku.
+- Kandidátní tvary vztahu odvozujeme z biologie a porovnáváme grafem, residui a `r render_glossary_term("aic", display = "AIC")`, ale AIC jen mezi modely se stejnou odezvou.
+- Po `r render_glossary_term("transformace", display = "transformaci")` se mění význam koeficientů: `r render_glossary_term("sklon", display = "sklon")` mocninného vztahu udává, kolikrát se změní odezva při zdvojnásobení prediktoru.
+
+# Slovníček pojmů {.unnumbered}
 
 Pojmy použité v těchto materiálech a jejich definice:
 
 ```{r}
 #| label: slovnicek
 #| echo: false
-glossary::glossary_table()
+#| results: asis
+
+if (knitr::is_html_output()) {
+  glossary::glossary_table()
+} else {
+  cat(
+    paste0(
+      "Interaktivní slovníček je dostupný online: ",
+      "https://cuni-natur-biostatistics.github.io/slovnik/"
+    )
+  )
+}
 ```
