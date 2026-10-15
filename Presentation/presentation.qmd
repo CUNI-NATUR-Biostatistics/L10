@@ -1,5 +1,5 @@
 ---
-format: 
+format:
   revealjs:
     slide-number: true
     theme: [default, ../theme/presentation_theme.scss, ../theme/presentation_components.scss]
@@ -17,1233 +17,2815 @@ filters:
 ```{r}
 #| label: setup
 #| include: false
+#| warning: false
+#| message: false
 options(htmltools.dir.version = FALSE)
 knitr::opts_chunk$set(
-  fig.width = 7,
-  fig.height = 5,
+  fig.width = 10,
+  fig.height = 5.6,
   fig.align = "center",
-  out.width = "100%"
+  out.width = "100%",
+  warning = FALSE,
+  message = FALSE
 )
-
-if (!require("here")) install.packages("here")
-
-library(here)
 
 here::i_am("Presentation/presentation.qmd")
 
-if (!require("tidyverse")) install.packages("tidyverse")
-if (!require("ggbeeswarm")) install.packages("ggbeeswarm")
-if (!require("ggview")) install.packages("ggview")
-if (!require("magick")) install.packages("magick")
-if (!require("cowplot")) install.packages("cowplot")
-if (!require("remotes")) install.packages("remotes")
-if (!require("waffle")) remotes::install_github("hrbrmstr/waffle")
+source(here::here("R", "set_r_theme.R"))
+source(here::here("R", "Functions", "format_cz.R"))
 
-library(tidyverse)
-library(ggbeeswarm)
-library(ggview)
-library(magick)
-library(cowplot)
-library(waffle)
-
-path_materials <-
-  "Presentation/Materials"
+path_materials <- "Presentation/Materials"
 
 include_local_figure <- function(data_source) {
   knitr::include_graphics(
-    path = here::here(
-      path_materials,
-      data_source
-    ),
+    path = here::here(path_materials, data_source),
     error = TRUE
   )
 }
+
+source(here::here("R", "Functions", "include_optional_figure.R"))
+source(here::here("R", "Functions", "ai_disclosure.R"))
+
+showtext::showtext_auto(enable = FALSE)
+
+# Czech decimal comma inside LaTeX: braces stop the comma from adding space
+format_cz_math <- function(x, digits = 2) {
+  gsub(
+    pattern = ",",
+    replacement = "{,}",
+    x = format_cz(x = x, digits = digits),
+    fixed = TRUE
+  )
+}
+
+# Semantic colours: data grey, model purple, current focus orange,
+# reference lines graphite
+barva_data <- biostat_cols[["grey_olive"]]
+barva_model <- biostat_cols[["indigo_velvet"]]
+barva_fokus <- biostat_cols[["orange"]]
+barva_reference <- biostat_cols[["graphite"]]
+
+theme_l10 <- theme_biostat(base_size = 19) +
+  ggplot2::theme(
+    text = ggplot2::element_text(family = ""),
+    axis.title = ggplot2::element_text(family = ""),
+    panel.grid.minor = ggplot2::element_blank(),
+    legend.position = "bottom",
+    plot.caption = ggplot2::element_text(
+      colour = biostat_cols[["grey_olive"]],
+      size = 13
+    )
+  )
+
+popisek_simulace <- "simulovaná data"
+
+# Whole-number counts on the y axis, Czech number format
+skala_y_pocty <- ggplot2::scale_y_continuous(
+  breaks = function(limity) unique(floor(pretty(limity))),
+  labels = function(x) format_cz(x, 0)
+)
+
+# Island area in km² on the x axis: three readable breaks
+skala_x_plocha <- ggplot2::scale_x_continuous(
+  breaks = c(0, 2000, 4000),
+  labels = function(x) format_cz(x, 0)
+)
+
+seed_kurz <- 900723
 ```
 
 ```{r}
 #| label: dynamic link generation
 #| include: false
-project_name <-
-  basename(here::here())
-
-display_name <-
-  paste("Biostatistika", "-", project_name)
-
-github_url <-
-  paste0(
-    "https://github.com/CUNI-NATUR-Biostatistics/",
-    project_name
-  )
-
-slides_url <-
-  paste0(
-    "https://CUNI-NATUR-Biostatistics.github.io/",
-    project_name, "/"
-  )
+project_name <- basename(here::here())
+display_name <- stringr::str_glue("Biostatistika - {project_name}")
+github_url <- stringr::str_glue(
+  "https://github.com/CUNI-NATUR-Biostatistics/{project_name}"
+)
+slides_url <- stringr::str_glue(
+  "https://CUNI-NATUR-Biostatistics.github.io/{project_name}/"
+)
 ```
 
-## Co nám může říct měření tučňáků? {.course-title .bg-indigo}
+## Jak rychle roste počet druhů rostlin s plochou ostrova? {.course-title .course-title-illustrated .bg-indigo}
 
 ::: {.course-title-mark}
 ![Logo kurzu Biostatistika](../theme/course-logo-reversed.svg) BIOSTATISTIKA
 :::
 
 ::: {.course-title-number}
-LXX
+L10
 :::
 
 ::: {.course-title-formal}
-Vztahy dvou proměnných
+Tvar rozdělení, transformace a nelinearita
 :::
 
 ::: {.course-title-link}
 [cuni-natur-biostatistics.github.io/materialy.html](https://cuni-natur-biostatistics.github.io/materialy.html)
 :::
 
-::: {.notes}
-V každé nové lekci nahraďte ukázkovou otázku, název a označení lekce vlastními údaji. Otázka na titulním snímku musí vycházet ze schválené datové linky lekce.
+::: {.course-title-illustration}
+```{r}
+#| label: zobrazit-titulni-ilustraci
+#| echo: false
+#| out-width: "100%"
+#| fig-alt: "Želva botanička a pěnkava stojí na pobřeží Galapág; kolem nich leží sopečné ostrovy velmi různých velikostí, od drobných skalek po velký zelený ostrov. Ilustrace vytvořená pomocí AI."
+# Generated title illustration; prompt and provenance in GENERATED_IMAGES.md.
+include_optional_figure(data_source = "ostrovy_titulni.png")
+```
 :::
 
-## Co vidíme v měření tučňáků?
-
-TODO: Ukažte jeden konkrétní obrázek, měření nebo jiný háček k úvodní otázce. Nechte studenty nejprve popsat, co vidí.
+::: {.course-title-caption}
+`r if (nzchar(ai_disclosure("ostrovy_titulni.png"))) "Ilustrace vytvořená pomocí AI. Družicový snímek: NASA/GSFC (volné dílo)." else ""`
+:::
 
 ::: {.notes}
-Tento ukázkový snímek nahraďte prvním datovým nebo biologickým háčkem vlastní lekce; ponechte vazbu na otázku z titulního snímku.
+Titulní otázka nese celou přednášku. Ilustrace představuje dvojici postav (želvu botaničku a pěnkavu) a ostrovy různých velikostí; neukazuje žádný výsledek.
 :::
+
+## Kolikrát víc druhů rostlin má desetkrát větší ostrov?
+
+:::: {.layout-stack .layout-center-y}
+
+::: columns
+::: {.column width="52%"}
+```{r}
+#| label: zobrazit-souostrovi
+#| echo: false
+#| out-width: "100%"
+#| fig-alt: "Družicový snímek tmavě modrého oceánu s rozptýlenými ostrovy Galapág. Ostrovy se velmi liší velikostí: od několika obrovských sopečných ostrovů po drobné skalky."
+include_local_figure("galapagy-satelit-2002.jpg")
+```
+:::
+::: {.column width="46%"}
+
+<br>
+
+Na větších ostrovech roste [více druhů]{.text-hgl-graphite} rostlin. Ale [kolikrát]{.text-hgl-orange} více?
+
+<br>
+
+::: columns
+::: {.column width="48%"}
+::: {.card-question}
+**A** · asi 1,5krát
+:::
+::: {.card-question}
+**C** · asi 5krát
+:::
+:::
+::: {.column width="48%"}
+::: {.card-question}
+**B** · asi 2,5krát
+:::
+::: {.card-question}
+**D** · 10krát
+:::
+:::
+:::
+
+:::
+:::
+
+::::
+
+[Snímek: J. Descloitres, MODIS Rapid Response Project, NASA/GSFC (volné dílo), 12. 3. 2002]{.footer}
+
+::: {.notes}
+Hlasování rukou. Ať si každý svou volbu zapamatuje; odpověď přinesou data na konci přednášky (snímek „Desetkrát větší ostrov…“). Nic neprozrazovat. Největší ostrov ve tvaru písmene L je Isabela, vlevo od něj Fernandina.
+:::
+
+{{< include ../pollslive/generated/active.qmd >}}
 
 ## Výsledky učení
 
-Po absolvování této přednášky budete schopni:
+Po lekci dokážete:
 
-- TODO: výsledek učení 1
-- TODO: výsledek učení 2
-- TODO: výsledek učení 3
+::: incremental
+- popsat [tvar rozdělení]{.text-hgl-orange} proměnné nebo residuí z histogramu a Q–Q grafu a posoudit, zda je pro lineární model podstatný;
+- rozlišit transformace, které mění [jen měřítko]{.text-hgl-graphite} (jednotky, centrování, z-skóre), od těch, které [mění tvar]{.text-hgl-orange} (logaritmus, odmocnina);
+- rozpoznat [zakřivený vztah]{.text-hgl-orange} v datech a navrhnout jednoduché řešení;
+- porovnat několik [biologicky smysluplných tvarů vztahu]{.text-hgl-indigo_velvet} jako kandidátní modely;
+- vysvětlit, jak transformace mění [interpretaci koeficientů]{.text-hgl-indigo_velvet}.
+:::
 
-# Obsah přednášky
+# Tvar rozdělení
 
-## Snímek 1
+## Jeden řádek tabulky představuje jeden ostrov
 
-TODO: obsah snímku
-
-```{r}
-#| label: demo-plot
-#| echo: true
-# TODO: ukázka kódu v R
-```
-
-## Shrnutí
-
-- TODO: klíčové body přednášky
-
-# Slide Creator's Guide {.center}
-
-[Slides in this section are intended for lecture authors, not students. Delete this section and the `# Tools Overview` section before using as an actual lecture.]{.text-size-smaller .text-color-grey_olive}
-
-# Golden Rules {.center}
-
-## Rule 1 — Data story first {.bg-parchment}
+:::: {.layout-stack .layout-center-y}
 
 ::: columns
-::: {.column width="48%"}
-::: {.card-warning}
-[Wrong]{.card-title}
-**Pearson correlation**
+::: {.column width="55%"}
+```{r}
+#| label: zobrazit-ostrovy-pruzkum
+#| echo: false
+#| out-width: "100%"
+#| fig-alt: "Želva botanička a pěnkava počítají druhy rostlin na malém skalnatém ostrůvku; v pozadí leží velký sopečný ostrov s pestrou vegetací."
+include_optional_figure(data_source = "ostrovy_pruzkum.png")
+```
 
-Pearson's correlation coefficient measures the strength of the linear relationship between two variables...
-
-[formula]
+[`r ai_disclosure("ostrovy_pruzkum.png")`]{.text-size-tiny .text-right}
 :::
-:::
-::: {.column width="48%"}
-::: {.card-insight}
-[Right]{.card-title}
-**How do we turn the shape of a cloud into a number?**
+::: {.column width="43%"}
+::: {.panel-data}
+[U každého ostrova Galapág známe]{.card-title}
 
-[scatter plot the students have seen for several slides already]
-
-*What properties would such a number need to have?*
-
-→ **Correlation coefficient** [the name arrives as the answer]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
+- **počet druhů** cévnatých rostlin;
+- **plochu** ostrova (km²);
+- **nejvyšší bod** (m n. m.);
+- počet endemitů a vzdálenosti k sousedním ostrovům.
 :::
 
-[A statistical term never opens a concept as a heading. Data first → observation → question → only then the name.]{.text-size-smaller .text-color-grey_olive}
+<br>
 
-## Rule 2 — One idea per slide
-
-**Every slide communicates one thing.**
-
-If you need to say two things, use two slides.
-
-If you need to say three things, add an interaction between them.
-
-::: {.takeaway-strip}
-**One message. One slide. Contribute to understanding — not to overload.**
+Botanici druhy spočítali na ostrovech [od skalek po obří sopky]{.text-hgl-graphite}.
+:::
 :::
 
-[Test: cover the heading — is the main idea of the slide still clear from the visual or a single sentence?]{.text-size-smaller .text-color-grey_olive}
+::::
 
-## Rule 3 — Interaction every 10–15 minutes
+[Data: M. P. Johnson & P. H. Raven (1973), *Science* 179: 893–895 · balíček `faraway` 1.0.9 (`galamiss`) · GPL]{.footer}
 
-::: {.panel-note}
-[Six interaction types]{.panel-title}
-
-| Type | When to use |
-|---|---|
-| Prediction question | Before revealing a result, graph, or test output |
-| Conceptual MCQ | To surface a common misconception; ideally with a polling tool |
-| Think–Pair–Share | After a new concept; 30 s thinking + 1–2 min pair discussion |
-| Silent write | Before discussion or reveal; each student writes one sentence |
-| Interpretation task | After showing a graph, model output, or table |
-| Data exploration | To open a topic — what patterns / hypotheses do you see? |
+::: {.notes}
+Ilustrace jen ukotvuje jednotku pozorování (jeden ostrov) a dvě hlavní proměnné: plochu a počet druhů. O tom, jak rychle počet druhů roste, nic neříká.
 :::
+
+## Co v tabulce chybí a co je neobvyklé?
+
+::: columns
+::: {.column width="58%"}
+```{r}
+#| label: nacist-data-ostrovu
+#| echo: true
+#| class-output: text-size-tiny
+data_ostrovy <- read.csv(
+  file = here::here("data", "druhy_galapagy.csv")
+)
+
+colSums(x = is.na(data_ostrovy))
+
+range(x = data_ostrovy$plocha_km2)
+```
+:::
+::: {.column width="40%"}
+```{r}
+#| label: najit-neobvykle-hodnoty
+#| include: false
+pocet_ostrovu <- nrow(data_ostrovy)
+pocet_chybejicich_vysek <- sum(is.na(data_ostrovy$nejvyssi_bod_m))
+plocha_min <- min(data_ostrovy$plocha_km2)
+plocha_max <- max(data_ostrovy$plocha_km2)
+ostrov_plocha_max <- data_ostrovy$ostrov[which.max(data_ostrovy$plocha_km2)]
+ostrov_nulova_vzdalenost <-
+  data_ostrovy$ostrov[data_ostrovy$vzdalenost_santa_cruz_km == 0]
+ostrov_bez_endemitu <- data_ostrovy$ostrov[data_ostrovy$pocet_endemitu == 0]
+```
+
+<br>
 
 ::: {.panel-question}
-[Example — prediction question]{.panel-title}
-
-*How does the confidence interval change if we double the sample size?*
-
-**A)** Narrows   **B)** Stays the same   **C)** Widens
+Které hodnoty by nám mohly dělat potíže?
 :::
 
-## Rule 4 — Always frame biologically
+::: {.fragment}
+::: {.panel-data .text-size-smaller}
+[`r pocet_ostrovu` ostrovů]{.card-title}
 
-Every statistical method must be grounded in a concrete biological question.
-
-::: {.blockquote}
-**Four steps of the biological frame:**
-
-1. **Biological question** — "we want to find out whether…"
-2. **Data** — description, type, source
-3. **Statistical method** — what and why
-4. **Interpretation in biological context** — what the result says about the world, not about numbers
+- nejvyšší bod chybí u [`r pocet_chybejicich_vysek`]{.text-hgl-orange} ostrovů;
+- plocha od [`r format_cz(plocha_min, 2)`]{.text-hgl-orange} do [`r format_cz(plocha_max, 0)` km²]{.text-hgl-orange} (`r ostrov_plocha_max`);
+- skutečné nuly: vzdálenost ostrova `r ostrov_nulova_vzdalenost` k sobě samému, `r ostrov_bez_endemitu` bez endemitů.
 :::
-
-[Never start with "today we'll learn the t-test". Always start with "we want to know whether…"]{.text-size-smaller .text-color-grey_olive}
-
-## Rule 5 — Alternate visual patterns (3-of-5 rule)
-
-**At most 3 of 5 consecutive slides may use a named component as the primary visual element.**
-
-A plain slide — a bold question on an empty background, a full-width graph, a single prominent number — carries more weight precisely because the surrounding slides are more structured.
-
-::: {.strip-orange}
-**3 of 5 — the law of slide visual contrast** · review the block before finalising
-:::
-
-[Components: `.card-*`, `.panel-*`, `.blockquote`, `.takeaway-strip`. If you reach 4+ in a row, convert one slide to a plain visual or an unframed question.]{.text-size-smaller .text-color-grey_olive}
-
-# Five Slide Families {.center}
-
-## Five slide families
-
-::: columns
-::: {.column width="62%"}
-
-| Family | Goal | Typical component |
-|---|---|---|
-| **Interaction** | Prediction / MCQ / TPS | bold question, `.panel-question` |
-| **Data reveal** | New data or output | full-width graph, plain slide |
-| **Interpretation** | Read the result | `.panel-result`, `.takeaway-strip` |
-| **Rule / warning** | Heuristic, error | `.card-warning`, `.panel-warning` |
-| **Transition / summary** | Reset, conclusion | `.blockquote` in two columns |
-
-:::
-::: {.column width="35%"}
-::: {.card-olive}
-[Variety of families]{.card-title}
-In one lecture, cycle through all five families.
-
-No block of 5+ slides should belong to only one family.
 :::
 :::
 :::
 
-[Students should be able to recognise the role of a slide before reading the text — from the colour key, layout, or position in the structure.]{.text-size-smaller .text-color-grey_olive}
+::: {.notes}
+`str()` je ve skriptech; zde jen chybějící hodnoty a rozsah plochy. Nuly si studenti mají zapamatovat: vrátí se u logaritmu. Největší ostrov je asi půl milionukrát větší než nejmenší.
+:::
 
-# Model output for authors {.center}
+## Jak vypadají počty druhů a plochy ostrovů?
 
-## Build model tables from the fit
+```{r}
+#| label: zobrazit-histogramy-ostrovu
+#| echo: false
+#| fig-height: 4.4
+#| fig-alt: "Dva histogramy. Vlevo počet druhů: většina ostrovů má méně než sto druhů, několik má stovky. Vpravo plocha: téměř všechny ostrovy leží v prvním koši u nuly, několik má stovky až tisíce km²."
+graf_hist_druhy <-
+  ggplot2::ggplot(
+    data = data_ostrovy,
+    mapping = ggplot2::aes(x = pocet_druhu)
+  ) +
+  ggplot2::geom_histogram(
+    bins = 15,
+    fill = barva_data,
+    colour = "white"
+  ) +
+  skala_y_pocty +
+  ggplot2::labs(x = "Počet druhů rostlin", y = "Počet ostrovů") +
+  theme_l10
 
-Use this pattern only after a lesson has introduced the model and its base-R output. Keep the model fit and preparation in hidden chunks near the first table; show only the selected Czech-labelled table. Adjust terms, quantities, rounding, and units to the actual teaching question.
+graf_hist_plocha <-
+  ggplot2::ggplot(
+    data = data_ostrovy,
+    mapping = ggplot2::aes(x = plocha_km2)
+  ) +
+  ggplot2::geom_histogram(
+    bins = 15,
+    fill = barva_data,
+    colour = "white"
+  ) +
+  skala_x_plocha +
+  skala_y_pocty +
+  ggplot2::labs(x = "Plocha ostrova (km²)", y = "Počet ostrovů") +
+  theme_l10
 
-```r
-# Hidden authoring code after fitting mod_priklad locally:
-koeficienty <-
-  broom::tidy(mod_priklad, conf.int = TRUE)
+cowplot::plot_grid(graf_hist_druhy, graf_hist_plocha, nrow = 1)
+```
 
-tabulka <-
-  data.frame(
-    Parametr = koeficienty$term,
-    Odhad = koeficienty$estimate,
-    `Standardní chyba` = koeficienty$std.error,
-    check.names = FALSE
+::: {.panel-question}
+**Ve dvojici:** Kde leží většina ostrovů? Co s každým obrázkem dělá několik největších ostrovů?
+:::
+
+::: {.notes}
+Zatím žádná nová slova. Nechte studenty popsat „hromadu vlevo“ a „řídký ocas vpravo“ vlastními slovy. Šířku koše (bin width) znají z L01.
+:::
+
+## Dlouhý ocas vpravo táhne průměr od mediánu
+
+```{r}
+#| label: spocitat-prumer-a-median
+#| include: false
+prumer_druhu <- mean(data_ostrovy$pocet_druhu)
+median_druhu <- median(data_ostrovy$pocet_druhu)
+prumer_plochy <- mean(data_ostrovy$plocha_km2)
+median_plochy <- median(data_ostrovy$plocha_km2)
+
+pridat_prumer_median <- function(graf, prumer, median) {
+  graf +
+    ggplot2::geom_vline(
+      xintercept = median,
+      colour = barva_reference,
+      linetype = "dashed",
+      linewidth = 1.2
+    ) +
+    ggplot2::geom_vline(
+      xintercept = prumer,
+      colour = barva_fokus,
+      linewidth = 1.6
+    )
+}
+```
+
+```{r}
+#| label: zobrazit-prumer-a-median
+#| echo: false
+#| fig-height: 4
+#| fig-alt: "Stejné dva histogramy s oranžovou čarou průměru a přerušovanou grafitovou čarou mediánu. U obou proměnných leží průměr výrazně vpravo od mediánu, směrem k dlouhému ocasu."
+cowplot::plot_grid(
+  pridat_prumer_median(graf_hist_druhy, prumer_druhu, median_druhu),
+  pridat_prumer_median(graf_hist_plocha, prumer_plochy, median_plochy),
+  nrow = 1
+)
+```
+
+::: {.columns .text-size-smaller}
+::: {.column width="50%"}
+Druhy: [průměr `r format_cz(prumer_druhu, 1)`]{.text-hgl-orange} · [medián `r format_cz(median_druhu, 0)`]{.text-hgl-graphite}
+:::
+::: {.column width="50%"}
+Plocha (km²): [průměr `r format_cz(prumer_plochy, 1)`]{.text-hgl-orange} · [medián `r format_cz(median_plochy, 2)`]{.text-hgl-graphite}
+:::
+:::
+
+::: {.fragment .takeaway-strip}
+Rozdělení s dlouhým ocasem vpravo je **pravostranně šikmé** (*right-skewed*).
+:::
+
+::: {.notes}
+Callback L01: u hmotnosti savců jsme tehdy říkali „výrazně asymetrická“ a doporučili medián. Šikmost se pojmenovává podle strany dlouhého ocasu, ne podle strany, kde leží většina hodnot.
+:::
+
+## Které slovo patří ke kterému tvaru?
+
+```{r}
+#| label: simulovat-galerii-tvaru
+#| include: false
+pocet_simulovanych_hodnot <- 300
+
+set.seed(seed_kurz)
+
+data_galerie_tvaru <-
+  tibble::tibble(
+    tvar = rep(
+      x = c(
+        "dva vrcholy",
+        "pravostranně šikmé",
+        "souměrné",
+        "těžké konce",
+        "levostranně šikmé"
+      ),
+      each = pocet_simulovanych_hodnot
+    ),
+    hodnota = c(
+      c(
+        stats::rnorm(n = pocet_simulovanych_hodnot / 2, mean = 40, sd = 5),
+        stats::rnorm(n = pocet_simulovanych_hodnot / 2, mean = 70, sd = 5)
+      ),
+      stats::rlnorm(n = pocet_simulovanych_hodnot, meanlog = 3, sdlog = 0.6),
+      stats::rnorm(n = pocet_simulovanych_hodnot, mean = 50, sd = 10),
+      50 + 6 * stats::rt(n = pocet_simulovanych_hodnot, df = 3),
+      100 - stats::rlnorm(n = pocet_simulovanych_hodnot, meanlog = 3, sdlog = 0.6)
+    )
+  ) |>
+  dplyr::mutate(
+    cislo = factor(
+      x = as.character(match(tvar, unique(tvar))),
+      levels = as.character(1:5)
+    )
+  )
+```
+
+```{r}
+#| label: zobrazit-galerii-tvaru
+#| echo: false
+#| fig-height: 3.7
+#| fig-alt: "Pět simulovaných histogramů označených 1 až 5. Panel 1 má dva oddělené vrcholy. Panel 2 má vrchol vlevo a dlouhý ocas vpravo. Panel 3 je souměrný zvon. Panel 4 je úzký souměrný vrchol s ojedinělými vzdálenými hodnotami na obou stranách. Panel 5 má vrchol vpravo a dlouhý ocas vlevo."
+ggplot2::ggplot(
+  data = data_galerie_tvaru,
+  mapping = ggplot2::aes(x = hodnota)
+) +
+  ggplot2::geom_histogram(bins = 25, fill = barva_data, colour = "white") +
+  ggplot2::facet_wrap(facets = ggplot2::vars(cislo), scales = "free", nrow = 1) +
+  ggplot2::labs(x = NULL, y = NULL, caption = popisek_simulace) +
+  theme_l10 +
+  ggplot2::theme(
+    axis.text = ggplot2::element_blank(),
+    strip.text = ggplot2::element_text(size = 24, face = "bold")
+  )
+```
+
+**souměrné · pravostranně šikmé · levostranně šikmé · těžké konce · dva vrcholy**
+
+[**Ve dvojici:** Přiřaďte každému panelu jedno slovo.]{.text-size-smaller}
+
+::: {.fragment .text-size-tiny}
+[1 dva vrcholy]{.text-hgl-graphite} · [2 pravostranně šikmé]{.text-hgl-orange} · [3 souměrné]{.text-hgl-graphite} · [4 těžké konce]{.text-hgl-graphite} · [5 levostranně šikmé]{.text-hgl-graphite}
+:::
+
+::: {.notes}
+Callbacky: těžší chvosty t-rozdělení (L05) jsou totéž co těžké konce; dva vrcholy jsme viděli u délek erupcí Old Faithful (L04). Panel 4 se od panelu 3 liší hlavně vzdálenými hodnotami, střed má naopak užší. Počet druhů i plocha jsou typ 2.
+:::
+
+## Proč je tolik biologických veličin pravostranně šikmých?
+
+```{r}
+#| label: simulovat-scitani-a-nasobeni
+#| include: false
+pocet_populaci <- 1000
+pocet_kroku <- 20
+pocatecni_velikost <- 300
+
+set.seed(seed_kurz)
+
+matice_pricitani <-
+  matrix(
+    data = stats::rnorm(n = pocet_populaci * pocet_kroku, mean = 0, sd = 15),
+    nrow = pocet_populaci
   )
 
-tinytable::tt(tabulka, digits = 2)
+matice_nasobeni <-
+  matrix(
+    data = exp(stats::rnorm(n = pocet_populaci * pocet_kroku, mean = 0, sd = 0.15)),
+    nrow = pocet_populaci
+  )
+
+vec_procesy <- c("Přičítání náhodných přírůstků", "Násobení náhodnými faktory")
+
+data_scitani_nasobeni <-
+  tibble::tibble(
+    proces = factor(
+      x = rep(x = vec_procesy, each = pocet_populaci),
+      levels = vec_procesy
+    ),
+    velikost = c(
+      pocatecni_velikost + rowSums(matice_pricitani),
+      pocatecni_velikost * apply(X = matice_nasobeni, MARGIN = 1, FUN = prod)
+    )
+  )
 ```
 
-Do not copy coefficient values into a hand-written table. Compare the generated values with `coef(mod_priklad)` and `summary(mod_priklad)` and inspect the rendered HTML and PDF before reusing this example.
-
-# Tools Overview {.center}
-
-## `.box-*` aliases — when to use what
-
-| Alias | Maps to | Weight | Colour | When to use |
-|-------|-----------|------|-------|------------|
-| `.box-question` | `.panel-question` | panel (lighter) | orange left border | MCQ, reflection question |
-| `.box-result` | `.panel-result` | panel (lighter) | indigo left border | main conclusion, analysis result |
-| `.box-data` | `.panel-data` | panel (lighter) | olive left border | dataset description, data context |
-| `.box-rule` | `.card-rule` | card (heavier) | amethyst top strip + shadow | rule, heuristic |
-| `.box-warning` | `.card-warning` | card (heavier) | red top strip + shadow | methodological warning |
-
-[Panel aliases (lighter): coloured left border, no shadow. Card aliases (heavier): coloured top strip + shadow. Inner heading: `[text]{.panel-title}` for panels · `[text]{.card-title}` for cards.]{.text-size-smaller .text-color-grey_olive}
-
-## `.box-question` — interaction, MCQ
-
-::: columns
-::: {.column width="55%"}
-::: {.box-question}
-[Question for reflection]{.panel-title}
-
-What percentage of penguin body-mass variability is explained by bill length?
-
-**A)** less than 30 % &nbsp;&nbsp; **B)** 30–60 % &nbsp;&nbsp; **C)** more than 60 %
+::: {.panel-question}
+Plocha ostrova ani počet druhů nemohou klesnout pod nulu. Jak velké ale mohou být? A co se stane, když populace roste o [procenta]{.text-hgl-orange}, ne o stejný počet jedinců?
 :::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.box-question}
-[Question for reflection]{.panel-title}
-
-Question text + choices A / B / C.
-:::
-```
-
-[= `.panel-question` · orange left border · heading `{.panel-title}`]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## `.box-result` — main result
-
-::: columns
-::: {.column width="55%"}
-::: {.box-result}
-[What we see]{.panel-title}
-
-Each millimetre of bill length corresponds on average to **+8.7 g** body mass
-(95% CI: 6.2–11.2 g). The model explains 45 % of body-mass variability.
-:::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.box-result}
-[What we see]{.panel-title}
-
-Main conclusion or analysis result.
-:::
-```
-
-[= `.panel-result` · indigo left border · heading `{.panel-title}` or `{.panel-lead}`]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## `.box-data` — dataset description
-
-::: columns
-::: {.column width="55%"}
-::: {.box-data}
-[Palmer Penguins]{.panel-title}
-
-344 penguins from three islands · 3 species *(Adelie, Chinstrap, Gentoo)*
-
-Variables: bill length and depth (mm), flipper length (mm), body mass (g), sex, year
-:::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.box-data}
-[Dataset name]{.panel-title}
-
-Brief description: number of
-observations, variables, source.
-:::
-```
-
-[= `.panel-data` · olive left border · heading `{.panel-title}`]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## `.box-warning` — methodological warning
-
-::: columns
-::: {.column width="55%"}
-::: {.box-warning}
-[Caution — correlation ≠ causation]{.card-title}
-
-A longer bill does not imply that *the bill causes* greater body mass — both traits
-may reflect overall body size.
-:::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.box-warning}
-[Warning heading]{.card-title}
-
-Methodological error, misinterpretation,
-data limitation.
-:::
-```
-
-[= `.card-warning` · **card** · red top strip + shadow · heading `{.card-title}`]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## `.box-rule` — rule, heuristic
-
-::: columns
-::: {.column width="55%"}
-::: {.box-rule}
-[Mean or median?]{.card-title}
-
-If the data are symmetric → mean.
-
-If the data are skewed or contain outliers → median.
-:::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.box-rule}
-[Rule heading]{.card-title}
-
-Condition → recommendation.
-Or a verbal heuristic.
-:::
-```
-
-[= `.card-rule` · **card** · amethyst top strip + shadow · heading `{.card-title}`]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## Combination: `.box-question` + `.takeaway-strip`
-
-::: columns
-::: {.column width="55%"}
-::: {.box-question}
-[Question for reflection]{.panel-title}
-
-Why does bill length differ between penguin species and within a single species?
-:::
-
-::: {.takeaway-strip}
-**Morphology as adaptation.** Bill length reflects life strategy — Gentoo penguins forage differently from Adelie.
-:::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.box-question}
-[Question]{.panel-title}
-Question...
-:::
-
-::: {.takeaway-strip}
-**Conclusion.** Closing the conclusion.
-:::
-```
-
-[`.takeaway-strip` after `.box-question` closes a slide sequence. One slide = one question + one conclusion.]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## Fragment: incremental reveal of `.box-result`
-
-::: columns
-::: {.column width="55%"}
-Let's look at the linear model output.
 
 ::: {.fragment}
-::: {.box-result}
-[Result]{.panel-title}
-
-Bill length coefficient: **+8.7 g/mm** (95% CI: 6.2–11.2 g).
-The effect is statistically and biologically significant.
-:::
-:::
-:::
-::: {.column width="42%"}
-```markdown
-Sentence before the pause.
-
-::: {.fragment}
-::: {.box-result}
-[Result]{.panel-title}
-Text that is revealed.
-:::
-:::
-```
-
-[`::: {.fragment}` wraps any `.box-*` block. Students see the sentence → click → result.]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## Tool: plain question without a frame {.center}
-
-<br>
-
-::: {.text-center .text-size-large .text-bold}
-How does the confidence interval change if we double the sample size?
-:::
-
-<br>
-
-::: {.text-center}
-**A)** Narrows &nbsp;&nbsp;&nbsp; **B)** Stays the same &nbsp;&nbsp;&nbsp; **C)** Widens
-:::
-
-<br>
-
-[Plain slide: bold question + choices without a frame. Maximum visual contrast against slides with `.box-*` components.]{.text-size-smaller .text-color-grey_olive}
-
-## Roughnotation — use sparingly
-
-Each millimetre of penguin bill length corresponds on average to
-[+8.7 g body mass]{.rn-underline-indigo} — the effect is
-[biologically significant]{.rn-box-orange}.
-
-<br>
-
-::: columns
-::: {.column width="48%"}
-```markdown
-[text]{.rn-underline-indigo}
-[text]{.rn-box-orange}
-[text]{.rn-circle-amethyst}
-[text]{.rn-bracket-indigo}
+```{r}
+#| label: zobrazit-scitani-a-nasobeni
+#| echo: false
+#| fig-height: 2.9
+#| fig-alt: "Dva histogramy simulovaných velikostí tisíce populací po dvaceti krocích. Vlevo, kde se přírůstky přičítají, vzniká souměrný zvon kolem počáteční velikosti. Vpravo, kde se velikost násobí, má rozdělení vrchol vlevo a dlouhý ocas vpravo."
+ggplot2::ggplot(
+  data = data_scitani_nasobeni,
+  mapping = ggplot2::aes(x = velikost)
+) +
+  ggplot2::geom_histogram(bins = 40, fill = barva_data, colour = "white") +
+  ggplot2::geom_vline(
+    xintercept = pocatecni_velikost,
+    linetype = "dashed",
+    colour = barva_reference
+  ) +
+  ggplot2::facet_wrap(facets = ggplot2::vars(proces), scales = "free") +
+  ggplot2::labs(
+    x = stringr::str_glue("Velikost populace po {pocet_kroku} krocích"),
+    y = "Počet populací",
+    caption = popisek_simulace
+  ) +
+  theme_l10
 ```
 :::
-::: {.column width="48%"}
-```markdown
-[text]{.rn-highlight-orange}
-[text]{.rn-cross-graphite}
+
+::: {.fragment .takeaway-strip}
+[Hranice v nule]{.text-hgl-orange} a [růst násobením]{.text-hgl-orange} vytvářejí dlouhý ocas vpravo — vlastnost biologie, ne chyba dat.
+:::
+
+::: {.notes}
+`r pocet_populaci` simulovaných populací začíná na stejné velikosti (přerušovaná čára). Vlevo se k velikosti v každém kroku přičte náhodný přírůstek, vpravo se vynásobí náhodným faktorem. Velké populace rostou ve stejných procentech o více jedinců, a proto utečou doprava.
+:::
+
+## Kolik hodnot leží do jedné směrodatné odchylky od průměru?
+
+```{r}
+#| label: spocitat-pasma-sd
+#| include: false
+podil_1_sd <- stats::pnorm(1) - stats::pnorm(-1)
+podil_2_sd <- stats::pnorm(2) - stats::pnorm(-2)
+podil_3_sd <- stats::pnorm(3) - stats::pnorm(-3)
+
+vec_pasma <- c("do 1 SD od průměru", "1 až 2 SD", "dál než 2 SD")
+
+data_zvon <-
+  tibble::tibble(x = seq(from = -3.6, to = 3.6, length.out = 600)) |>
+  dplyr::mutate(
+    hustota = stats::dnorm(x = x),
+    pasmo = factor(
+      x = dplyr::case_when(
+        abs(x) <= 1 ~ vec_pasma[1],
+        abs(x) <= 2 ~ vec_pasma[2],
+        TRUE ~ vec_pasma[3]
+      ),
+      levels = vec_pasma
+    ),
+    usek = paste(pasmo, x >= 0)
+  )
 ```
-
-Colours: `indigo`, `orange`, `amethyst`,
-`olive`, `graphite`, `red`
-:::
-:::
-
-[**Sparingly:** max 1–2 effects per slide, 3–5 per lecture. Types: `underline`, `box`, `circle`, `bracket`, `highlight`, `cross`. Not as decoration — only for one key moment in a concept.]{.text-size-smaller .text-color-grey_olive}
-
-# Reference Slides: SCSS Components {.center}
-
-# Cards {.center}
-
-## Card: basic structure
-
-::: {.card-indigo}
-[Card heading]{.card-title}
-
-Card body — one or two short paragraphs. The font is intentionally smaller than the base
-slide size (0.82 em) to fit more content.
-
-- Cards can also contain a list
-- Each item on its own line
-:::
-
-[Syntax: `::: {.card-indigo}` + `[text]{.card-title}` for the coloured top strip — without the old `.slide-card` + variant combination.]{.text-size-smaller .text-color-grey_olive}
-
-## Card: .card-title
 
 ::: columns
 ::: {.column width="60%"}
-::: {.card-insight}
-[This is .card-title]{.card-title}
-
-`[text]{.card-title}` must be the **first thing** inside the card — it creates the coloured top strip.
+```{r}
+#| label: zobrazit-pasma-sd
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4.6
+#| fig-alt: "Souměrná zvonovitá křivka. Oranžové pásmo kolem průměru sahá od průměru minus jedna SD do průměru plus jedna SD, šedé pásmo od jedné do dvou SD, okraje za dvěma SD jsou světlé."
+ggplot2::ggplot(data = data_zvon, mapping = ggplot2::aes(x = x, y = hustota)) +
+  ggplot2::geom_ribbon(
+    mapping = ggplot2::aes(ymin = 0, ymax = hustota, fill = pasmo, group = usek)
+  ) +
+  ggplot2::geom_line(colour = barva_reference, linewidth = 1) +
+  ggplot2::geom_vline(
+    xintercept = -2:2,
+    linetype = "dashed",
+    colour = barva_reference,
+    linewidth = 0.5
+  ) +
+  ggplot2::scale_fill_manual(
+    values = c(barva_fokus, barva_data, biostat_cols[["light_gray"]]),
+    guide = "none"
+  ) +
+  ggplot2::scale_x_continuous(
+    breaks = -2:2,
+    labels = c("průměr\n− 2 SD", "průměr\n− 1 SD", "průměr", "průměr\n+ 1 SD", "průměr\n+ 2 SD")
+  ) +
+  ggplot2::labs(x = NULL, y = NULL) +
+  theme_l10 +
+  ggplot2::theme(axis.text.y = ggplot2::element_blank())
+```
 :::
-:::
-
 ::: {.column width="38%"}
-```markdown
-::: {.card-insight}
-[Section name]{.card-title}
-
-Card body.
-:::
-```
-:::
-:::
-
-## Card: compact variant
-
-::: columns
-::: {.column width="48%"}
-::: {.card-orange}
-[Standard]{.card-title}
-
-`.card-orange` — padding `0.7rem 1rem`. Suitable for longer content.
-:::
-:::
-
-::: {.column width="48%"}
-::: {.card-orange .card-compact}
-[Compact]{.card-title}
-
-`.card-orange .card-compact` — reduced padding (`0.45rem 0.75rem`). For denser layouts.
-:::
-:::
-:::
-
-## Card: overview of variants
-
-::: columns
-::: {.column width="18%"}
-::: {.card-indigo}
-[indigo]{.card-title}
-`.card-indigo`
-:::
-:::
-::: {.column width="18%"}
-::: {.card-orange}
-[orange]{.card-title}
-`.card-orange`
-:::
-:::
-::: {.column width="18%"}
-::: {.card-amethyst}
-[amethyst]{.card-title}
-`.card-amethyst`
-:::
-:::
-::: {.column width="18%"}
-::: {.card-olive}
-[olive]{.card-title}
-`.card-olive`
-:::
-:::
-::: {.column width="18%"}
-::: {.card-red}
-[red]{.card-title}
-`.card-red`
-:::
-:::
-:::
-
-::: columns
-::: {.column width="16%"}
-::: {.card-question}
-[question]{.card-title}
-`.card-question`
-:::
-:::
-::: {.column width="16%"}
-::: {.card-insight}
-[insight]{.card-title}
-`.card-insight`
-:::
-:::
-::: {.column width="16%"}
-::: {.card-warning}
-[warning]{.card-title}
-`.card-warning`
-:::
-:::
-::: {.column width="16%"}
-::: {.card-data}
-[data]{.card-title}
-`.card-data`
-:::
-:::
-::: {.column width="16%"}
-::: {.card-result}
-[result]{.card-title}
-`.card-result`
-:::
-:::
-::: {.column width="16%"}
-::: {.card-rule}
-[rule]{.card-title}
-`.card-rule`
-:::
-:::
-:::
-
-[Semantic variants are aliases: `.card-question` = orange, `.card-insight` = `.card-result` = indigo, `.card-warning` = red, `.card-data` = olive, `.card-rule` = amethyst. Shorthand: `.box-question`, `.box-result`, `.box-data`, `.box-warning`, `.box-rule`.]{.text-size-smaller .text-color-grey_olive}
-
-# Panels {.center}
-
-## Panel: `.panel-result`
-
-::: columns
-::: {.column width="55%"}
-::: {.panel-result}
-[Key insight]{.panel-title}
-
-Purple left border. For the main message of a block — conclusion, analysis result, or key number.
-:::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.panel-result}
-[Heading]{.panel-title}
-Panel text.
-:::
-```
-
-[`.panel-title` is `display: block`; gives the heading h3 appearance without `###`.]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## Panel: `.panel-question`
-
-::: columns
-::: {.column width="55%"}
-::: {.panel-question}
-[Conclusion or option]{.panel-title}
-
-Orange left border. For conclusions, comparison results, or offering multiple answer choices.
-:::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.panel-question}
-[Conclusion or option]{.panel-title}
-Panel text.
-:::
-```
-:::
-:::
-
-## Panel: `.panel-question` + `.panel-lead`
-
-::: columns
-::: {.column width="55%"}
-::: {.panel-question}
-[Computation result]{.panel-lead}
-
-Large highlighted result — replaces the old `.answer-title`. Use at most once per slide.
-:::
-:::
-::: {.column width="42%"}
-```markdown
-::: {.panel-question}
-[Computation result]{.panel-lead}
-
-Text below the result.
-:::
-```
-
-[`.panel-lead` is large and bold. Suitable for a key number or conclusion.]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## Panel: `.panel-note` and `.panel-warning`
-
-::: columns
-::: {.column width="48%"}
-::: {.panel-note}
-[Instructions or output]{.panel-title}
-
-Neutral olive border. For instructions, workflow steps, or model output.
-:::
-:::
-::: {.column width="48%"}
-::: {.panel-warning}
-[Caution!]{.panel-title}
-
-Red left border. For warnings, common errors, or deliberate alerts.
-:::
-:::
-:::
-
-## Panel: overview of colour variants
-
-::: columns
-::: {.column width="18%"}
-::: {.panel-indigo}
-[indigo]{.panel-title}
-`.panel-indigo`
-:::
-:::
-::: {.column width="18%"}
-::: {.panel-orange}
-[orange]{.panel-title}
-`.panel-orange`
-:::
-:::
-::: {.column width="18%"}
-::: {.panel-amethyst}
-[amethyst]{.panel-title}
-`.panel-amethyst`
-:::
-:::
-::: {.column width="18%"}
-::: {.panel-olive}
-[olive]{.panel-title}
-`.panel-olive`
-:::
-:::
-::: {.column width="18%"}
-::: {.panel-red}
-[red]{.panel-title}
-`.panel-red`
-:::
-:::
-:::
-
-[Semantic variants are aliases: `.panel-result` = indigo, `.panel-question` = orange, `.panel-warning` = red, `.panel-note` = amethyst, `.panel-data` = olive. Shorthand (`.box-*`) wraps the matching panel.]{.text-size-smaller .text-color-grey_olive}
-
-# Takeaway strip {.center}
-
-## Takeaway strip: standard
-
-Sentence that leads into the conclusion — contextual paragraph above the strip.
-
-::: {.takeaway-strip}
-**Main slide conclusion.** `.takeaway-strip` — indigo-to-orange gradient background,
-indigo left border. One per slide, placed at the bottom.
-:::
-
-[`::: {.takeaway-strip}` — the gradient is built in, no extra class needed.]{.text-size-smaller .text-color-grey_olive}
-
-## Takeaway strip: compact variant
-
-Sentence above the strip as usual.
-
-::: {.takeaway-strip}
-Main conclusion — standard strip.
-:::
-
-::: {.takeaway-strip .strip-compact}
-Supplementary conclusion — `.strip-compact` reduces `margin-top`. Useful for two conclusions together.
-:::
-
-## Strip: colour variants
-
-::: columns
-::: {.column width="18%"}
-::: {.strip-indigo}
-`.strip-indigo`
-:::
-:::
-::: {.column width="18%"}
-::: {.strip-orange}
-`.strip-orange`
-:::
-:::
-::: {.column width="18%"}
-::: {.strip-amethyst}
-`.strip-amethyst`
-:::
-:::
-::: {.column width="18%"}
-::: {.strip-olive}
-`.strip-olive`
-:::
-:::
-::: {.column width="18%"}
-::: {.strip-red}
-`.strip-red`
-:::
-:::
-:::
-
-# Blockquote {.center}
-
-## Blockquote div: `.blockquote`
-
-::: {.blockquote}
-**Definition or quotation.** `.blockquote` — light purple background, indigo left border (6px),
-rounded corners. Font 0.82 em.
-
-- Can contain a list
-- Each item on its own line
-:::
-
-[Use `::: {.blockquote}`, not Markdown `>`. The div variant gets correct styling;
-Markdown blockquote gets different styles from `presentation_theme.scss`.]{.text-size-smaller .text-color-grey_olive}
-
-# Slide backgrounds {.center}
-
-## Backgrounds: dark variants {.bg-indigo}
-
-This slide has the class `{.bg-indigo}`. Text and headings are automatically white.
-
-::: columns
-::: {.column width="48%"}
-Syntax — add the class to the slide heading:
-
-```markdown
-## Slide title {.bg-indigo}
-```
-:::
-::: {.column width="48%"}
-Available dark variants:
-
-- `{.bg-indigo}` — primary indigo
-- `{.bg-amethyst}` — lighter purple
-- `{.bg-olive}` — grey-green
-- `{.bg-red}` — red
-- `{.bg-graphite}` — dark grey
-:::
-:::
-
-## Backgrounds: light variants {.bg-parchment}
-
-This slide has the class `{.bg-parchment}`. Text is automatically graphite.
-
-::: columns
-::: {.column width="48%"}
-Available light variants:
-
-- `{.bg-orange}` — orange
-- `{.bg-parchment}` — cream
-- `{.bg-white}` — pure white
-:::
-::: {.column width="48%"}
-Text and heading colour adapts automatically — no need to add `.text-color-*`.
-:::
-:::
-
-# Inline highlights {.center}
-
-## Inline highlight: `.text-hgl-{color}`
-
-The model intercept is −153.4 and the length coefficient is
-[4.05 g/mm]{.text-hgl-indigo_velvet} — each millimetre of length corresponds on average
-to four grams of body mass.
-
-Caution — this procedure works [only when the normality assumption is met]{.text-hgl-orange}.
-
-[Syntax: `[text]{.text-hgl-indigo_velvet}` — coloured chip with contrasting text. Available colours: `indigo_velvet`, `orange`, `amethyst`, `grey_olive`, `graphite`, `white`, `light_gray`, `parchment`.]{.text-size-smaller .text-color-grey_olive}
-
-## Inline highlight: `.text-bg-{color}` and `.text-color-{color}`
-
-::: columns
-::: {.column width="48%"}
-[`.text-hgl-indigo_velvet`]{.text-hgl-indigo_velvet} — chip with contrasting text
-
-[`.text-bg-indigo_velvet`]{.text-bg-indigo_velvet} — chip without text colour change
-
-[`.text-color-indigo_velvet`]{.text-color-indigo_velvet} — text colour only
-
-[`.text-color-indigo_velvet .text-bold`]{.text-color-indigo_velvet .text-bold} — colour + bold
-:::
-::: {.column width="48%"}
-```markdown
-[text]{.text-hgl-indigo_velvet}
-[text]{.text-bg-indigo_velvet}
-[text]{.text-color-indigo_velvet}
-[text]{.text-color-indigo_velvet .text-bold}
-```
-:::
-:::
-
-# Roughnotation {.center}
-
-## Roughnotation: shorthand syntax
-
-Shorthand `{.rn-{type}-{colour}}` expands via `rn-shorthand.lua`:
-
-::: columns
-::: {.column width="48%"}
-**Short form (new):**
-
-Each millimetre of length corresponds to approximately
-[four grams of body mass]{.rn-underline-indigo}.
-
-```markdown
-[text]{.rn-underline-indigo}
-```
-:::
-::: {.column width="48%"}
-**Long form (still functional):**
-
-```markdown
-[text]{.rn-fragment rn-type=underline
-  rn-color="#5D2890"}
-```
-:::
-:::
-
-[Available types: `underline`, `box`, `circle`, `highlight`, `cross`, `bracket`. Colours: `indigo`, `orange`, `amethyst`, `olive`, `graphite`, `red`.]{.text-size-smaller .text-color-grey_olive}
-
-## Roughnotation: `box`, `circle`, `bracket`
-
-::: columns
-::: {.column width="32%"}
-**box**
-
-**R² = [0.76]{.rn-box-indigo}**
-
-```markdown
-[0.76]{.rn-box-indigo}
-```
-:::
-::: {.column width="32%"}
-**circle**
-
-The relationship is [strong]{.rn-circle-orange}.
-
-```markdown
-[strong]{.rn-circle-orange}
-```
-:::
-::: {.column width="32%"}
-**bracket**
-
-**ŷ = β₀ + [β₁x]{.rn-bracket-indigo}**
-
-```markdown
-[β₁x]{.rn-bracket-indigo}
-```
-:::
-:::
-
-[Animation fires on fragment arrival. Do not use both colours on the same slide.]{.text-size-smaller .text-color-grey_olive}
-
-# Fragments and progressive disclosure {.center}
-
-## Fragment: `.fragment` block
-
-A sentence that is on the slide from the start.
-
-::: {.fragment}
-::: {.panel-result}
-[Conclusion arrives after pause]{.panel-title}
-
-This entire block appears as a single fragment — the student sees the sentence above
-and only after clicking does the panel with the conclusion reveal itself.
-:::
-:::
-
-[Syntax: `::: {.fragment}` wraps any block. Works with panels, blockquotes, strips, and cards.]{.text-size-smaller .text-color-grey_olive}
-
-## Fragment: `.incremental` list
-
-Which properties must a good correlation coefficient satisfy?
-
-::: {.incremental}
-- It must be symmetric: correlation of X with Y = correlation of Y with X.
-- It must be dimensionless: independent of the scale of variables.
-- It must be in the interval −1 to +1.
-- +1 = perfect positive dependence, −1 = perfect negative dependence.
-:::
-
-[Each item appears on click.]{.text-size-smaller .text-color-grey_olive}
-
-# Typography {.center}
-
-## Typography: sizes
-
-::: columns
-::: {.column width="55%"}
-[`.text-size-heading` — 140 % of base]{.text-size-heading}
-
-[`.text-size-large` — 130 % of base]{.text-size-large}
-
-Normal text (100 %, base 30 px)
-
-[`.text-size-smaller` — 82 % of base]{.text-size-smaller}
-
-[`.text-size-tiny` — 65 % of base]{.text-size-tiny}
-:::
-::: {.column width="42%"}
-```markdown
-[text]{.text-size-heading}
-[text]{.text-size-large}
-[text]{.text-size-smaller}
-[text]{.text-size-tiny}
-```
-
-[`.text-size-body` = 100 % (explicit reset). Old `.text-larger`/`.text-smaller`/`.text-tiny` are removed.]{.text-size-smaller .text-color-grey_olive}
-:::
-:::
-
-## Typography: weight, alignment, font
-
-::: {.text-center}
-`.text-center` — horizontal centre
-:::
-
-::: {.text-right}
-`.text-right` — right alignment
-:::
 
 <br>
 
-[`.text-font-heading` — Source Sans 3, heading weight]{.text-font-heading}
-
-[`.text-font-monospace` — JetBrains Mono]{.text-font-monospace}
-
-[`.text-bold` — bold]{.text-bold}
-
-# Colour utilities {.center}
-
-## Colours: indigo_velvet and amethyst
-
-::: columns
-::: {.column width="48%"}
-::: {.bg-indigo_velvet style="padding:0.55rem 0.8rem;border-radius:10px;margin-bottom:0.5rem;"}
-[`.bg-indigo_velvet` — primary indigo]{.text-color-white}
-:::
-[`.text-color-indigo_velvet`]{.text-color-indigo_velvet}
-
-[`.text-hgl-indigo_velvet`]{.text-hgl-indigo_velvet}
-:::
-::: {.column width="48%"}
-::: {.bg-amethyst style="padding:0.55rem 0.8rem;border-radius:10px;margin-bottom:0.5rem;"}
-[`.bg-amethyst` — lighter purple]{.text-color-white}
-:::
-[`.text-color-amethyst`]{.text-color-amethyst}
-
-[`.text-hgl-amethyst`]{.text-hgl-amethyst}
-:::
-:::
-
-## Colours: orange and graphite
-
-::: columns
-::: {.column width="48%"}
-::: {.bg-orange style="padding:0.55rem 0.8rem;border-radius:10px;margin-bottom:0.5rem;"}
-[`.bg-orange` — vivid orange]{.text-color-graphite}
-:::
-[`.text-color-orange`]{.text-color-orange}
-
-[`.text-hgl-orange`]{.text-hgl-orange}
-:::
-::: {.column width="48%"}
-::: {.bg-graphite style="padding:0.55rem 0.8rem;border-radius:10px;margin-bottom:0.5rem;"}
-[`.bg-graphite` — dark base]{.text-color-white}
-:::
-[`.text-color-graphite`]{.text-color-graphite}
-
-[`.text-hgl-graphite`]{.text-hgl-graphite}
-:::
-:::
-
-## Colours: neutral palette tones
-
-::: columns
-::: {.column width="23%"}
-::: {.bg-parchment style="padding:0.5rem 0.7rem;border-radius:10px;border:1px solid #ccc;"}
-[`.bg-parchment`]{.text-color-graphite .text-size-smaller}
-:::
-[`.text-color-parchment`]{.text-color-parchment .text-size-smaller .bg-graphite style="padding:1px 4px;border-radius:3px;"}
-
-[`.text-hgl-parchment`]{.text-hgl-parchment .text-size-smaller}
-:::
-::: {.column width="23%"}
-::: {.bg-grey_olive style="padding:0.5rem 0.7rem;border-radius:10px;"}
-[`.bg-grey_olive`]{.text-color-white .text-size-smaller}
-:::
-[`.text-color-grey_olive`]{.text-color-grey_olive .text-size-smaller}
-
-[`.text-hgl-grey_olive`]{.text-hgl-grey_olive .text-size-smaller}
-:::
-::: {.column width="23%"}
-::: {.bg-light_gray style="padding:0.5rem 0.7rem;border-radius:10px;border:1px solid #ccc;"}
-[`.bg-light_gray`]{.text-color-graphite .text-size-smaller}
-:::
-[`.text-color-light_gray`]{.text-color-light_gray .text-size-smaller .bg-graphite style="padding:1px 4px;border-radius:3px;"}
-
-[`.text-hgl-light_gray`]{.text-hgl-light_gray .text-size-smaller}
-:::
-::: {.column width="23%"}
-::: {.bg-white style="padding:0.5rem 0.7rem;border-radius:10px;border:1px solid #ccc;"}
-[`.bg-white`]{.text-color-graphite .text-size-smaller}
-:::
-[`.text-color-white`]{.text-color-white .text-size-smaller .bg-graphite style="padding:1px 4px;border-radius:3px;"}
-
-[`.text-hgl-white`]{.text-hgl-white .text-size-smaller}
-:::
-:::
-
-# Layout utilities {.center}
-
-## Layout: `.columns.align-top`
-
-::: {.columns .align-top}
-::: {.column width="48%"}
-**Left column** starts at the top — without `.align-top` the content would be vertically centred.
-
-::: {.card-indigo}
-Card in the left column.
-
-Second paragraph inside the card — the left column is taller.
-:::
-:::
-::: {.column width="48%"}
-**Right column** is shorter.
-
-Without `.align-top` the right text would shift down to the centre of the column pair.
-:::
-:::
-
-[Syntax: `::: {.columns .align-top}` — add the class `.align-top` to `.columns`.]{.text-size-smaller .text-color-grey_olive}
-
-## Layout: vertical offsets
+Jaká část hodnot leží v [oranžovém pásmu]{.text-hgl-orange}?
 
 ::: {.card-question}
-[Example: `.slide-margin-top-15`]{.kicker}
-
-This card would have `margin-top: 15%` if it had the class `.slide-margin-top-15`.
-Useful for vertically centring an isolated element on a slide.
+**A** · asi polovina
+:::
+::: {.card-question}
+**B** · [asi dvě třetiny]{.rn-circle-orange}
+:::
+::: {.card-question}
+**C** · asi 95 %
+:::
+:::
 :::
 
-::: {.takeaway-strip .strip-compact}
-`.slide-margin-top-15` → `margin-top: 15%` · `.slide-margin-top-25` → `margin-top: 25%` · `.center-vertical` → absolute centre
+::: {.fragment .box-rule}
+Takový zvon je **normální rozdělení** (*normal distribution*): do 1 SD leží asi [`r format_cz(100 * podil_1_sd, 0)` %]{.text-hgl-orange}, do 2 SD asi `r format_cz(100 * podil_2_sd, 0)` % a do 3 SD asi `r format_cz(100 * podil_3_sd, 1)` % hodnot.
 :::
 
-[For a group of related elements, prefer the normal-flow `.layout-stack.layout-center-y` utility shown below.]{.text-size-smaller .text-color-grey_olive}
+::: {.notes}
+Zvon znají z L03 (Q–Q grafy) a z t-rozdělení (L04–L05); teď dostává jméno. Průměr určuje střed, SD šířku. Odpověď B. Pokud je čas: 95 % do dvou SD vysvětluje, proč 95% interval spolehlivosti sahá zhruba o dvě standardní chyby na každou stranu.
+:::
 
-## Layout: `.layout-grid-2`
+## Platí pravidlo 68 % i pro plochy ostrovů?
 
-:::: {.layout-grid-2}
-::: {.panel-result}
-[Left result]{.panel-title}
+```{r}
+#| label: spocitat-pas-plochy
+#| include: false
+sd_plochy <- sd(data_ostrovy$plocha_km2)
+dolni_mez_plochy <- prumer_plochy - sd_plochy
+horni_mez_plochy <- prumer_plochy + sd_plochy
+podil_ostrovu_1_sd <-
+  mean(abs(data_ostrovy$plocha_km2 - prumer_plochy) <= sd_plochy)
+```
 
-Two equal-width elements form one comparison.
+::: columns
+::: {.column width="60%"}
+```{r}
+#| label: zobrazit-pas-plochy
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4.6
+#| fig-alt: "Histogram plochy ostrovů s oranžovým pásem od průměru minus jedna SD do průměru plus jedna SD. Levý okraj pásu leží v záporných hodnotách plochy."
+graf_hist_plocha +
+  ggplot2::annotate(
+    geom = "rect",
+    xmin = dolni_mez_plochy,
+    xmax = horni_mez_plochy,
+    ymin = -Inf,
+    ymax = Inf,
+    fill = barva_fokus,
+    alpha = 0.25
+  ) +
+  ggplot2::geom_vline(
+    xintercept = prumer_plochy,
+    colour = barva_reference,
+    linetype = "dashed"
+  )
+```
+:::
+::: {.column width="38%"}
+
+<br>
+
+::: {.panel-question}
+**Ve dvojici:** Pás ukazuje průměr ± 1 SD plochy. Co je na něm divné?
+:::
+
+::: {.fragment}
+Průměr − SD = [`r format_cz(dolni_mez_plochy, 0)` km²]{.text-hgl-orange}: záporná plocha.
+
+V pásu leží [`r format_cz(100 * podil_ostrovu_1_sd, 0)` %]{.text-hgl-orange} ostrovů, ne asi `r format_cz(100 * podil_1_sd, 0)` %.
+:::
+:::
+:::
+
+::: {.fragment .takeaway-strip}
+Normální rozdělení je [vzor pro srovnání]{.text-hgl-graphite}, ne vlastnost, kterou musí mít biologická data.
+:::
+
+::: {.notes}
+Proto jsme v L01 u asymetrických dat doporučili medián a mezikvartilové rozpětí. Ke které části modelu se normální rozdělení vztahuje, ukáže další část.
+:::
+
+## Jak se dlouhý ocas pozná v Q–Q grafu?
+
+```{r}
+#| label: pripravit-qq-galerii
+#| include: false
+# Q–Q panels are shuffled so that students have to match them
+vec_poradi_qq <- c(
+  "a" = "pravostranně šikmé",
+  "b" = "dva vrcholy",
+  "c" = "levostranně šikmé",
+  "d" = "souměrné",
+  "e" = "těžké konce"
+)
+
+vec_tvary_histogramu <- levels(data_galerie_tvaru$cislo)
+
+theme_mala_galerie <-
+  theme_l10 +
+  ggplot2::theme(
+    axis.text = ggplot2::element_blank(),
+    axis.title = ggplot2::element_blank(),
+    plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5)
+  )
+
+list_histogramy <-
+  purrr::map(
+    .x = vec_tvary_histogramu,
+    .f = ~ ggplot2::ggplot(
+      data = data_galerie_tvaru[data_galerie_tvaru$cislo == .x, ],
+      mapping = ggplot2::aes(x = hodnota)
+    ) +
+      ggplot2::geom_histogram(bins = 25, fill = barva_data, colour = "white") +
+      ggplot2::labs(title = .x, x = NULL, y = NULL) +
+      theme_mala_galerie
+  )
+
+list_qq <-
+  purrr::map(
+    .x = names(vec_poradi_qq),
+    .f = ~ ggplot2::ggplot(
+      data = data_galerie_tvaru[data_galerie_tvaru$tvar == vec_poradi_qq[[.x]], ],
+      mapping = ggplot2::aes(sample = hodnota)
+    ) +
+      ggplot2::stat_qq(colour = barva_data, size = 1, alpha = 0.7) +
+      ggplot2::stat_qq_line(colour = barva_reference, linewidth = 0.9, linetype = "dashed") +
+      ggplot2::labs(title = .x, x = NULL, y = NULL) +
+      theme_mala_galerie
+  )
+
+# Two rows of panels with an empty band between them for the matching lines
+vys_mezera <- 0.5
+graf_qq_parovani <-
+  cowplot::plot_grid(
+    cowplot::plot_grid(plotlist = list_histogramy, nrow = 1),
+    ggplot2::ggplot() +
+      theme_l10 +
+      ggplot2::theme_void() +
+      ggplot2::theme(
+        plot.background = ggplot2::element_rect(
+          fill = biostat_background_color,
+          colour = NA
+        )
+      ),
+    cowplot::plot_grid(plotlist = list_qq, nrow = 1),
+    ncol = 1,
+    rel_heights = c(1, vys_mezera, 1)
+  )
+
+# Which Q–Q column belongs to each histogram column
+data_spojnice <-
+  tibble::tibble(
+    histogram = seq_along(vec_tvary_histogramu),
+    qq = match(
+      x = as.character(
+        data_galerie_tvaru$tvar[match(vec_tvary_histogramu, data_galerie_tvaru$cislo)]
+      ),
+      table = vec_poradi_qq
+    )
+  ) |>
+  dplyr::mutate(
+    x_horni = (histogram - 0.5) / 5,
+    x_dolni = (qq - 0.5) / 5
+  )
+
+y_horni <- (1 + vys_mezera) / (2 + vys_mezera)
+y_dolni <- 1 / (2 + vys_mezera)
+```
+
+::: {.r-stack}
+```{r}
+#| label: zobrazit-qq-galerii
+#| echo: false
+#| fig-height: 4.8
+#| fig-alt: "Nahoře pět histogramů 1 až 5 z galerie tvarů. Dole pět Q–Q grafů a až e v jiném pořadí: oblouk zvednutý vpravo, schod, propad vlevo dole, body na přímce a odklon na obou koncích opačnými směry."
+cowplot::ggdraw(graf_qq_parovani) +
+  cowplot::draw_label(
+    label = popisek_simulace,
+    x = 0.99,
+    y = 0.01,
+    hjust = 1,
+    vjust = 0,
+    size = 13,
+    colour = barva_data
+  )
+```
+
+::: {.fragment fragment-index=2}
+```{r}
+#| label: zobrazit-qq-galerii-spojnice
+#| echo: false
+#| fig-height: 4.8
+#| fig-alt: "Stejné histogramy a Q–Q grafy propojené oranžovými čarami: histogram 1 s Q–Q grafem b, 2 s a, 3 s d, 4 s e a 5 s c."
+graf_spojnice <- cowplot::ggdraw(graf_qq_parovani)
+
+for (i in seq_len(nrow(data_spojnice))) {
+  graf_spojnice <-
+    graf_spojnice +
+    cowplot::draw_line(
+      x = c(data_spojnice$x_horni[i], data_spojnice$x_dolni[i]),
+      y = c(y_horni, y_dolni),
+      colour = barva_fokus,
+      linewidth = 1.6
+    )
+}
+
+graf_spojnice +
+  cowplot::draw_label(
+    label = popisek_simulace,
+    x = 0.99,
+    y = 0.01,
+    hjust = 1,
+    vjust = 0,
+    size = 13,
+    colour = barva_data
+  )
+```
+:::
+:::
+
+::: columns
+::: {.column width="40%"}
+[**Ve dvojici:** Který Q–Q graf a–e patří ke kterému histogramu 1–5?]{.text-size-smaller}
+:::
+::: {.column width="58%" .fragment fragment-index=1 .text-size-smaller}
+Nápověda: [dlouhý ocas vpravo]{.text-hgl-orange} zvedá body vpravo nad přímku.
+:::
+:::
+
+::: {.notes}
+Q–Q graf porovnává seřazené hodnoty s kvantily normálního rozdělení (L03). Hledáme systematický vzor, ne jednotlivé body mimo přímku; u malých souborů body kolísají víc.
+:::
+
+# Sedí na ostrovy přímka?
+
+## Jak počet druhů popíše přímka?
+
+::: columns
+::: {.column width="40%"}
+
+<br>
+
+```{r}
+#| label: odhadnout-primku
+#| echo: true
+mod_primka <- lm(
+  formula = pocet_druhu ~ plocha_km2,
+  data = data_ostrovy
+)
+
+coef(object = mod_primka)
+```
+:::
+::: {.column width="58%"}
+::: {.r-stack}
+```{r}
+#| label: zobrazit-primku-ostrovu
+#| echo: false
+#| fig-width: 7
+#| fig-height: 5.2
+#| fig-alt: "Bodový graf počtu druhů proti ploše ostrova s fialovou přímkou. Většina ostrovů je namačkaná u počátku os, jeden velký ostrov leží úplně vpravo pod přímkou."
+data_isabela <- data_ostrovy[data_ostrovy$ostrov == "Isabela", ]
+
+# Fixed original axes shared by every anchor scatterplot of the islands
+osa_x_kotva <- c(0, 1.03 * max(data_ostrovy$plocha_km2))
+# Graphical constant: high enough for the quadratic candidate's vertex
+osa_y_kotva <- c(0, 680)
+
+graf_kotva <-
+  ggplot2::ggplot(
+    data = data_ostrovy,
+    mapping = ggplot2::aes(x = plocha_km2, y = pocet_druhu)
+  ) +
+  ggplot2::geom_point(colour = barva_data, size = 3, alpha = 0.85) +
+  skala_x_plocha +
+  ggplot2::coord_cartesian(xlim = osa_x_kotva, ylim = osa_y_kotva) +
+  ggplot2::labs(x = "Plocha ostrova (km²)", y = "Počet druhů rostlin") +
+  theme_l10
+
+graf_primka_ostrovu <-
+  graf_kotva +
+  ggplot2::geom_abline(
+    intercept = coef(mod_primka)[[1]],
+    slope = coef(mod_primka)[[2]],
+    colour = barva_model,
+    linewidth = 1.4
+  )
+
+graf_primka_ostrovu
+```
+
+::: {.fragment}
+```{r}
+#| label: zobrazit-primku-ostrovu-isabela
+#| echo: false
+#| fig-width: 7
+#| fig-height: 5.2
+#| fig-alt: "Stejný graf; ostrov Isabela úplně vpravo je zvýrazněný oranžově a popsaný."
+graf_primka_ostrovu +
+  ggplot2::geom_point(data = data_isabela, colour = barva_fokus, size = 4.5) +
+  ggplot2::annotate(
+    geom = "text",
+    x = data_isabela$plocha_km2,
+    y = data_isabela$pocet_druhu,
+    label = "Isabela",
+    vjust = 2,
+    hjust = 0.8,
+    size = 6,
+    colour = barva_reference
+  )
+```
+:::
+:::
+:::
 :::
 
 ::: {.panel-question}
-[Right question]{.panel-title}
-
-The shared gap keeps the pair readable.
-:::
-::::
-
-::: {.takeaway-strip}
-Use `::: {.layout-grid-2}` for a comparison or prompt pair—not merely to decorate an ordinary list.
+Kde leží většina ostrovů? Který ostrov o sklonu přímky rozhoduje nejvíc?
 :::
 
-## Layout: vertical stack
-
-:::: {.layout-stack}
-::: {.box-question}
-First related teaching element.
+::: {.notes}
+Sklon: `r format_cz(coef(mod_primka)[[2]], 3)` druhu na každý km², tedy asi `r format_cz(100 * coef(mod_primka)[[2]], 1)` druhu na 100 km². `r sum(data_ostrovy$plocha_km2 < 10)` ostrovů má plochu pod 10 km² a v grafu splývá u levého okraje.
 :::
 
-::: {.box-result}
-Second element with consistent breathing room.
+## Z čeho se skládá počet druhů jednoho ostrova?
+
+```{r}
+#| label: rozlozit-jeden-ostrov
+#| include: false
+data_rozklad <- data.frame(
+  ostrov = data_ostrovy$ostrov,
+  plocha_km2 = data_ostrovy$plocha_km2,
+  pocet_druhu = data_ostrovy$pocet_druhu,
+  odhad = fitted(object = mod_primka),
+  residuum = residuals(object = mod_primka)
+)
+
+# The island with the largest positive residual makes the split easy to see
+ostrov_rozklad <- data_rozklad[which.max(data_rozklad$residuum), ]
+```
+
+::: columns
+::: {.column width="58%"}
+```{r}
+#| label: zobrazit-rozklad-ostrova
+#| echo: false
+#| fig-width: 7
+#| fig-height: 5.2
+#| fig-alt: "Ostrovy s fialovou přímkou. Jeden ostrov je zvýrazněný oranžově a svislá oranžová úsečka spojuje přímku s jeho skutečným počtem druhů nad ní."
+graf_kotva +
+  ggplot2::geom_abline(
+    intercept = coef(mod_primka)[[1]],
+    slope = coef(mod_primka)[[2]],
+    colour = barva_model,
+    linewidth = 1.4
+  ) +
+  ggplot2::geom_segment(
+    data = ostrov_rozklad,
+    mapping = ggplot2::aes(xend = plocha_km2, y = odhad, yend = pocet_druhu),
+    colour = barva_fokus,
+    linewidth = 1.6
+  ) +
+  ggplot2::geom_point(data = ostrov_rozklad, colour = barva_fokus, size = 4.5) +
+  ggplot2::geom_point(
+    data = ostrov_rozklad,
+    mapping = ggplot2::aes(y = odhad),
+    colour = barva_model,
+    size = 4
+  ) +
+  ggplot2::annotate(
+    geom = "text",
+    x = ostrov_rozklad$plocha_km2,
+    y = ostrov_rozklad$pocet_druhu,
+    label = ostrov_rozklad$ostrov,
+    hjust = -0.15,
+    size = 6,
+    colour = barva_reference
+  )
+```
+:::
+::: {.column width="40%"}
+
+<br>
+
+`r ostrov_rozklad$ostrov`: [`r format_cz(ostrov_rozklad$pocet_druhu, 0)`]{.text-hgl-graphite} druhů
+
+::: {.fragment}
+= odhad přímky [`r format_cz(ostrov_rozklad$odhad, 0)`]{.text-hgl-indigo_velvet}
+
+\+ residuum [`r format_cz(ostrov_rozklad$residuum, 0)`]{.text-hgl-orange}
 :::
 
-::: {.takeaway-strip}
-The default gap is `1.4rem`; override `--layout-gap` on the wrapper only when the rendered composition needs it.
+::: {.fragment .takeaway-strip}
+Každý ostrov = [přímka]{.text-hgl-indigo_velvet} + [residuum]{.text-hgl-orange}.
 :::
-::::
+:::
+:::
 
-## Layout: centred stack
+::: {.notes}
+Residuum znají z lekce o první přímce: svislá vzdálenost bodu od přímky. Přímka nese systematickou část, residuum to, co přímka nevysvětlila.
+:::
+
+## Jak by vypadala residua, kdyby přímka seděla?
+
+```{r}
+#| label: simulovat-residua-dobre-primky
+#| include: false
+set.seed(seed_kurz)
+
+pocet_simulovanych_residui <- 300
+
+data_residua_dobre_primky <- data.frame(
+  residuum = stats::rnorm(
+    n = pocet_simulovanych_residui,
+    mean = 0,
+    sd = sd(residuals(object = mod_primka))
+  )
+)
+```
+
+::: {.panel-question}
+**Ve dvojici:** Kdyby přímka zachytila všechno systematické, co by v residuích zbylo? Načrtněte jejich histogram.
+:::
+
+::: {.fragment}
+```{r}
+#| label: zobrazit-residua-dobre-primky
+#| echo: false
+#| fig-height: 3.1
+#| fig-alt: "Histogram simulovaných residuí dobře padnoucí přímky: souměrný zvon kolem nuly, přes který je položena křivka normálního rozdělení."
+ggplot2::ggplot(
+  data = data_residua_dobre_primky,
+  mapping = ggplot2::aes(x = residuum)
+) +
+  ggplot2::geom_histogram(
+    mapping = ggplot2::aes(y = ggplot2::after_stat(density)),
+    bins = 25,
+    fill = barva_data,
+    colour = "white"
+  ) +
+  ggplot2::stat_function(
+    fun = stats::dnorm,
+    args = list(mean = 0, sd = sd(data_residua_dobre_primky$residuum)),
+    colour = barva_reference,
+    linewidth = 1.1
+  ) +
+  ggplot2::geom_vline(xintercept = 0, linetype = "dashed", colour = barva_reference) +
+  ggplot2::labs(x = "Residuum", y = NULL, caption = popisek_simulace) +
+  theme_l10 +
+  ggplot2::theme(axis.text.y = ggplot2::element_blank())
+```
+:::
+
+::: {.fragment .box-rule}
+Jen náhodné odchylky: [souměrný zvon kolem nuly]{.text-hgl-orange}. Takový tvar residuí lineární model předpokládá: přibližně [normální rozdělení residuí]{.text-hgl-orange}.
+:::
+
+::: {.notes}
+Simulace: `r pocet_simulovanych_residui` residuí přímky, která vztah vystihuje, se stejnou směrodatnou odchylkou jako residua ostrovů. Normální rozdělení studenti pojmenovali o několik snímků dříve.
+:::
+
+## Co ukazují residua přímky?
+
+```{r}
+#| label: definovat-diagnostiku
+#| include: false
+# Three diagnostic panels for any fitted model: residuals vs fitted values,
+# residual histogram and residual Q–Q plot
+vykreslit_diagnostiku <- function(model, popisek_residua) {
+  data_diag <- data.frame(
+    odhad = fitted(object = model),
+    residuum = residuals(object = model)
+  )
+
+  graf_rv <-
+    ggplot2::ggplot(data = data_diag, mapping = ggplot2::aes(x = odhad, y = residuum)) +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = barva_reference) +
+    ggplot2::geom_point(colour = barva_data, size = 2.6, alpha = 0.85) +
+    ggplot2::labs(x = "Odhadnutá hodnota", y = popisek_residua, title = "Residua") +
+    theme_l10
+
+  graf_hist <-
+    ggplot2::ggplot(data = data_diag, mapping = ggplot2::aes(x = residuum)) +
+    ggplot2::geom_histogram(bins = 12, fill = barva_data, colour = "white") +
+    skala_y_pocty +
+    ggplot2::labs(x = popisek_residua, y = "Počet ostrovů", title = "Histogram") +
+    theme_l10
+
+  graf_qq <-
+    ggplot2::ggplot(data = data_diag, mapping = ggplot2::aes(sample = residuum)) +
+    ggplot2::stat_qq(colour = barva_data, size = 2.6) +
+    ggplot2::stat_qq_line(colour = barva_reference, linetype = "dashed", linewidth = 1) +
+    ggplot2::labs(x = "Teoretický kvantil", y = popisek_residua, title = "Q–Q graf") +
+    theme_l10
+
+  cowplot::plot_grid(graf_rv, graf_hist, graf_qq, nrow = 1)
+}
+```
+
+```{r}
+#| label: zobrazit-diagnostiku-primky
+#| echo: false
+#| fig-height: 4
+#| fig-alt: "Tři diagnostické grafy přímky. Residua proti odhadnutým hodnotám jsou nahuštěná vlevo a jejich rozptyl roste doprava. Histogram residuí má dlouhý ocas vpravo. Q–Q graf se vpravo nahoře prudce zvedá nad přímku."
+vykreslit_diagnostiku(model = mod_primka, popisek_residua = "Residuum (druhy)")
+```
+
+::: {.panel-question}
+**Ve dvojici:** Porovnejte se zvonem z minulého snímku. Najděte alespoň dva vzory, které by u dobře padnoucí přímky neměly být vidět.
+:::
+
+::: {.fragment .text-size-smaller}
+Residua tvoří [ohyb]{.text-hgl-orange} · jejich [rozptyl roste doprava]{.text-hgl-orange} · histogram i Q–Q graf ukazují [dlouhý ocas vpravo]{.text-hgl-orange}.
+:::
+
+::: {.notes}
+Problém se netýká jen tvaru rozdělení residuí, ale i tvaru vztahu: přímka nesleduje, jak se počet druhů s plochou opravdu mění. Řešení zatím nejmenovat.
+:::
+
+##
 
 :::: {.layout-stack .layout-center-y}
-::: {.box-question .text-center}
-Which observation would change your conclusion?
+
+::: {.box-question}
+[Co musí mít u lineárního modelu přibližně normální rozdělení?]{.text-size-heading .text-bold}
 :::
 
-::: {.takeaway-strip .text-center}
-`.layout-center-y` centres the short stack in normal flow without transforming its children.
+::: columns
+::: {.column width="24%"}
+::: {.card-question}
+**A**
+
+odezva (počet druhů)
 :::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**B**
+
+prediktor (plocha ostrova)
+:::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**C**
+
+[residua modelu]{.rn-circle-orange}
+:::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**D**
+
+odezva i prediktor zároveň
+:::
+:::
+:::
+
+::: {.panel-olive}
+Přesvědčte souseda, proč jste vybrali svoji možnost.
+:::
+
+::: {.fragment}
+Správně je [C]{.text-hgl-indigo_velvet}: model = přímka + náhodné odchylky kolem ní. Předpoklad se týká [odchylek, tedy residuí]{.text-hgl-orange}. Šikmá odezva ani šikmý prediktor samy o sobě nevadí.
+:::
+
 ::::
 
+::: {.notes}
+Kontrola porozumění po předchozích dvou snímcích. Callback L03: `lm()` nevyžaduje normální odezvu. Na tuto otázku se vrátíme u kandidáta B, kde je odezva silně šikmá, a residua přesto vyhovují.
+:::
+
+## Jak jeden velký ostrov ovlivní celou přímku?
+
+```{r}
+#| label: spocitat-cookovu-vzdalenost
+#| include: false
+data_cook_primka <- data.frame(
+  poradi = seq_len(nrow(data_ostrovy)),
+  ostrov = data_ostrovy$ostrov,
+  cook = cooks.distance(model = mod_primka)
+)
+data_cook_primka$je_max <- data_cook_primka$cook == max(data_cook_primka$cook)
+cook_max_primka <- max(data_cook_primka$cook)
+ostrov_cook_max <- data_cook_primka$ostrov[data_cook_primka$je_max]
+cook_druhy_primka <- sort(data_cook_primka$cook, decreasing = TRUE)[2]
+ostrov_cook_druhy <-
+  data_cook_primka$ostrov[data_cook_primka$cook == cook_druhy_primka]
+```
+
+::: columns
+::: {.column width="60%"}
+```{r}
+#| label: zobrazit-cookovu-vzdalenost
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4.8
+#| fig-alt: "Cookovy vzdálenosti ostrovů v modelu přímky ve dvou panelech. Vlevo všechny ostrovy: Isabela má vzdálenost mnohonásobně vyšší než ostatní, které splývají s nulou. Vpravo stejné ostrovy bez Isabely na přiblížené ose: jejich vzdálenosti jsou nejvýš několik desetin."
+vykreslit_cook <- function(data_cook, nadpis, popisek_y) {
+  data_popisek <- data_cook[data_cook$cook == max(data_cook$cook), ]
+
+  ggplot2::ggplot(
+    data = data_cook,
+    mapping = ggplot2::aes(x = poradi, y = cook, colour = je_max)
+  ) +
+    ggplot2::geom_segment(
+      mapping = ggplot2::aes(xend = poradi, y = 0, yend = cook),
+      linewidth = 1.4
+    ) +
+    ggplot2::geom_point(size = 2) +
+    ggplot2::geom_text(
+      data = data_popisek,
+      mapping = ggplot2::aes(label = ostrov),
+      hjust = 1.1,
+      size = 5.5,
+      colour = barva_reference
+    ) +
+    ggplot2::scale_colour_manual(
+      values = c("FALSE" = barva_data, "TRUE" = barva_fokus),
+      guide = "none"
+    ) +
+    ggplot2::scale_y_continuous(labels = function(x) format_cz(x, 2)) +
+    ggplot2::labs(x = "Pořadí ostrova", y = popisek_y, title = nadpis) +
+    theme_l10 +
+    ggplot2::theme(plot.title = ggplot2::element_text(size = 17))
+}
+
+graf_cook_vse <-
+  vykreslit_cook(
+    data_cook = data_cook_primka,
+    nadpis = "Všechny ostrovy",
+    popisek_y = "Cookova vzdálenost"
+  ) +
+  ggplot2::scale_y_continuous(labels = function(x) format_cz(x, 0))
+
+graf_cook_bez_max <-
+  vykreslit_cook(
+    data_cook = data_cook_primka[!data_cook_primka$je_max, ],
+    nadpis = "Ostatní ostrovy (přiblíženo)",
+    popisek_y = NULL
+  )
+
+cowplot::plot_grid(graf_cook_vse, graf_cook_bez_max, nrow = 1)
+```
+:::
+::: {.column width="38%" .text-size-smaller}
+Cookova vzdálenost: jak moc se přímka změní, když ostrov vynecháme.
+
+`r ostrov_cook_max`: [`r format_cz(cook_max_primka, 1)`]{.text-hgl-orange} · druhý nejvyšší, `r ostrov_cook_druhy`: `r format_cz(cook_druhy_primka, 2)`
+
+::: {.fragment}
+::: {.panel-result}
+[Šikmý prediktor]{.panel-title}
+
+předpoklad modelu [neporušuje]{.text-hgl-graphite} — o rozdělení prediktoru model nic netvrdí.
+:::
+:::
+
+::: {.fragment}
+::: {.panel-warning}
+[Přesto praktický problém]{.panel-title}
+
+jeden ostrov [natáčí celou přímku]{.text-hgl-orange} jako dlouhá páka.
+:::
+:::
+:::
+:::
+
+::: {.notes}
+Cookovu vzdálenost znají z L07 a L09. Isabela není chyba měření a není důvod ji odstranit; problém je v modelu, který neumí popsat plochy lišící se o několik řádů.
+:::
+
+## Co už o ostrovech víme?
+
+:::: {.layout-stack .layout-center-y}
+
+::: {.box-question}
+Jak rychle roste počet druhů rostlin s plochou ostrova?
+:::
+
+::: columns
+::: {.column width="48%"}
+::: {.panel-result}
+[Už umíme říct]{.panel-title}
+
+- počet druhů i plocha jsou [pravostranně šikmé]{.text-hgl-orange};
+- přímka míjí většinu malých ostrovů;
+- residua se ohýbají, rozšiřují a mají dlouhý ocas;
+- přímku natáčí [jediný ostrov]{.text-hgl-orange}.
+:::
+:::
+::: {.column width="48%" .fragment}
+::: {.panel-question}
+[Zatím nevíme]{.panel-title}
+
+- Jak popsat ostrovy od `r format_cz(plocha_min, 2)` do `r format_cz(plocha_max, 0)` km² jedním modelem?
+- Pomůže, když [proměnné nějak upravíme]{.text-hgl-orange}? A jakou úpravou?
+:::
+:::
+:::
+
+::::
+
+# Transformace: měřítko, nebo tvar?
+
+## Změní se tvar rozdělení, když plochu převedeme na hektary?
+
+::: columns
+::: {.column width="36%"}
+
+<br>
+
+```{r}
+#| label: prevest-na-hektary
+#| echo: true
+data_ostrovy$plocha_ha <-
+  data_ostrovy$plocha_km2 * 100
+```
+
+<br>
+
+[Jeden km² má 100 hektarů.]{.text-size-smaller}
+:::
+::: {.column width="62%" .fragment}
+```{r}
+#| label: zobrazit-km2-a-hektary
+#| echo: false
+#| fig-width: 7.5
+#| fig-height: 4.6
+#| fig-alt: "Dva histogramy plochy ostrovů se zcela stejným tvarem. Liší se jen čísla na vodorovné ose, která jsou vpravo stokrát větší."
+vec_jednotky <- c("km²", "hektary")
+
+data_jednotky <-
+  tibble::tibble(
+    jednotka = factor(
+      x = rep(x = vec_jednotky, each = pocet_ostrovu),
+      levels = vec_jednotky
+    ),
+    hodnota = c(data_ostrovy$plocha_km2, data_ostrovy$plocha_ha)
+  )
+
+ggplot2::ggplot(data = data_jednotky, mapping = ggplot2::aes(x = hodnota)) +
+  ggplot2::geom_histogram(bins = 15, fill = barva_data, colour = "white") +
+  ggplot2::facet_wrap(facets = ggplot2::vars(jednotka), scales = "free_x") +
+  skala_y_pocty +
+  ggplot2::scale_x_continuous(
+    labels = function(x) format_cz(x, 0),
+    n.breaks = 3,
+    expand = ggplot2::expansion(mult = c(0.03, 0.15))
+  ) +
+  ggplot2::labs(x = "Plocha ostrova", y = "Počet ostrovů") +
+  theme_l10
+
+```
+
+[mění jen měřítko]{.text-hgl-graphite} — pořadí ostrovů i poměry vzdáleností mezi nimi zůstávají.
+:::
+:::
+
+::: {.notes}
+Krátká předpověď rukou: změní se tvar? Pak odhalit. Změnu jednotek používáme při spojování dat z různých zdrojů nebo pro čitelnější koeficient (druhy na 100 km² místo na 1 km²).
+:::
+
+## Co se změní, když od plochy odečteme průměr?
+
+::: columns
+::: {.column width="44%"}
+```{r}
+#| label: centrovat-plochu
+#| echo: true
+#| class-output: text-size-tiny
+data_ostrovy$plocha_centrovana <-
+  data_ostrovy$plocha_km2 -
+  mean(x = data_ostrovy$plocha_km2)
+
+mod_centrovany <- lm(
+  formula = pocet_druhu ~ plocha_centrovana,
+  data = data_ostrovy
+)
+
+coef(object = mod_primka)
+coef(object = mod_centrovany)
+```
+:::
+::: {.column width="54%"}
+```{r}
+#| label: zobrazit-centrovani
+#| echo: false
+#| fig-width: 6.8
+#| fig-height: 4.2
+#| fig-alt: "Dva bodové grafy se stejnými body a stejnou fialovou přímkou. Vlevo leží nula vodorovné osy u nejmenších ostrovů, vpravo uprostřed v průměrné ploše. Fialový kosočtverec označuje intercept, tedy výšku přímky v nule; vpravo leží výš."
+vec_skaly_centrovani <- c("Plocha (km²)", "Centrovaná plocha")
+
+data_centrovani <-
+  tibble::tibble(
+    skala = factor(
+      x = rep(x = vec_skaly_centrovani, each = pocet_ostrovu),
+      levels = vec_skaly_centrovani
+    ),
+    plocha = c(data_ostrovy$plocha_km2, data_ostrovy$plocha_centrovana),
+    pocet_druhu = rep(x = data_ostrovy$pocet_druhu, times = 2)
+  )
+
+data_intercepty <-
+  tibble::tibble(
+    skala = factor(x = vec_skaly_centrovani, levels = vec_skaly_centrovani),
+    intercept = c(coef(mod_primka)[[1]], coef(mod_centrovany)[[1]]),
+    sklon = c(coef(mod_primka)[[2]], coef(mod_centrovany)[[2]])
+  )
+
+ggplot2::ggplot(
+  data = data_centrovani,
+  mapping = ggplot2::aes(x = plocha, y = pocet_druhu)
+) +
+  ggplot2::geom_vline(xintercept = 0, linetype = "dashed", colour = barva_reference) +
+  ggplot2::geom_point(colour = barva_data, size = 2.2, alpha = 0.85) +
+  ggplot2::geom_abline(
+    data = data_intercepty,
+    mapping = ggplot2::aes(intercept = intercept, slope = sklon),
+    colour = barva_model,
+    linewidth = 1.2
+  ) +
+  ggplot2::geom_point(
+    data = data_intercepty,
+    mapping = ggplot2::aes(x = 0, y = intercept),
+    shape = 23,
+    size = 5,
+    fill = barva_model,
+    colour = barva_reference
+  ) +
+  ggplot2::facet_wrap(facets = ggplot2::vars(skala), scales = "free_x") +
+  ggplot2::scale_x_continuous(labels = function(x) format_cz(x, 0), n.breaks = 3) +
+  ggplot2::labs(x = NULL, y = "Počet druhů") +
+  theme_l10
+```
+
+::: {.panel-question .text-size-smaller}
+**Ve dvojici:** Co znamená intercept po centrování?
+:::
+:::
+:::
+
+::: {.fragment .text-size-smaller}
+Sklon se [nezměnil]{.text-hgl-graphite} (`r format_cz(coef(mod_primka)[[2]], 3)`). Intercept `r format_cz(coef(mod_primka)[[1]], 1)` → [`r format_cz(coef(mod_centrovany)[[1]], 1)`]{.text-hgl-indigo_velvet}: odhad druhů pro ostrov [průměrné plochy]{.text-hgl-indigo_velvet}, ne pro neexistující ostrov s nulovou plochou. · [mění jen měřítko]{.text-hgl-graphite}
+:::
+
+::: {.notes}
+Kdy centrujeme: když by intercept jinak popisoval nesmysl. Callback L08: koeficient pohlaví u krabů platil pro délku krunýře 0 mm, tedy mimo data; po centrování by platil pro kraba průměrné délky.
+:::
+
+## Jak daleko od průměru leží Fernandina?
+
+```{r}
+#| label: spocitat-z-skore-fernandina
+#| include: false
+fernandina <- data_ostrovy[data_ostrovy$ostrov == "Fernandina", ]
+
+prumer_vysky <- mean(data_ostrovy$nejvyssi_bod_m, na.rm = TRUE)
+sd_vysky <- sd(data_ostrovy$nejvyssi_bod_m, na.rm = TRUE)
+odchylka_vysky_fernandina <- fernandina$nejvyssi_bod_m - prumer_vysky
+z_vyska_fernandina <- odchylka_vysky_fernandina / sd_vysky
+```
+
+Nejvyšší bod Fernandiny [`r format_cz(fernandina$nejvyssi_bod_m, 0)` m]{.text-hgl-graphite} · průměr [`r format_cz(prumer_vysky, 1)` m]{.text-hgl-graphite} · SD [`r format_cz(sd_vysky, 1)` m]{.text-hgl-graphite}
+
+[**Spočítejte:** o kolik směrodatných odchylek leží Fernandina nad průměrem?]{.text-size-smaller}
+
+::: {.fragment}
+$$
+\text{z-skóre} = \frac{\text{hodnota} - \text{průměr}}{\text{SD}}
+= \frac{`r format_cz_math(fernandina$nejvyssi_bod_m, 0)` - `r format_cz_math(prumer_vysky, 1)`}{`r format_cz_math(sd_vysky, 1)`}
+= `r format_cz_math(z_vyska_fernandina, 2)`
+$$
+:::
+
+::: columns
+::: {.column width="48%" .fragment}
+```{r}
+#| label: spocitat-z-skore-vysky
+#| echo: true
+data_ostrovy$vyska_z <- as.numeric(
+  x = scale(x = data_ostrovy$nejvyssi_bod_m)
+)
+```
+:::
+::: {.column width="50%" .fragment}
+
+<br>
+
+Tomu se říká **z-skóre** (*z-score*). Z-skóre celé proměnné mají [průměr 0 a SD 1]{.text-hgl-indigo_velvet}; kladné znamená nad průměrem.
+:::
+:::
+
+::: {.notes}
+Callback L05: t-statistika měřila vzdálenost odhadu od nuly v počtu standardních chyb; z-skóre dělá totéž s jednou hodnotou. Průměr a SD výšky jsou z ostrovů, u nichž je výška známá. `as.numeric()` jen odstraní pomocné atributy, které `scale()` připojí.
+:::
+
+## Je Fernandina výjimečnější plochou, nebo výškou?
+
+```{r}
+#| label: spocitat-z-a-poradi-fernandiny
+#| include: false
+z_plocha_fernandina <- (fernandina$plocha_km2 - prumer_plochy) / sd_plochy
+poradi_plochy_fernandina <-
+  rank(-data_ostrovy$plocha_km2)[data_ostrovy$ostrov == "Fernandina"]
+poradi_vysky_fernandina <-
+  rank(-data_ostrovy$nejvyssi_bod_m, na.last = "keep")[
+    data_ostrovy$ostrov == "Fernandina"
+  ]
+```
+
+:::: {.layout-stack .layout-center-y}
+
+z-skóre plochy: [`r format_cz(z_plocha_fernandina, 2)`]{.text-hgl-orange} · z-skóre výšky: [`r format_cz(z_vyska_fernandina, 2)`]{.text-hgl-orange}
+
+::: columns
+::: {.column width="32%"}
+::: {.card-question}
+**A** · výjimečnější výškou
+:::
+:::
+::: {.column width="32%"}
+::: {.card-question}
+**B** · výjimečnější plochou
+:::
+:::
+::: {.column width="32%"}
+::: {.card-question}
+**C** · [v obou]{.rn-circle-orange fragment-index=2}
+:::
+:::
+:::
+
+::: {.fragment fragment-index=1}
+Z-skóre ukazují na A. Pořadí mezi ostrovy ale říká: plochou [`r poradi_plochy_fernandina`. největší]{.text-hgl-graphite}, výškou [`r poradi_vysky_fernandina`. nejvyšší]{.text-hgl-graphite} — výjimečná je v obou ohledech.
+:::
+
+::: {.fragment fragment-index=3 .box-warning}
+**Z-skóre u šikmé veličiny klame.** Obrovská Isabela nafoukla SD plochy, takže i `r poradi_plochy_fernandina`. největší ostrov vypadá skoro průměrně.
+:::
+
+::::
+
+::: {.notes}
+Podle z-skóre by studenti měli volit A; pořadí to vyvrátí. Z-skóre je užitečné hlavně u přibližně souměrných veličin, například při porovnání veličin v různých jednotkách nebo při skládání několika veličin do jednoho ukazatele.
+:::
+
+## Odstraní z-skóre šikmost?
+
+:::: {.layout-stack .layout-center-y}
+
+Plocha ostrovů je extrémně pravostranně šikmá. Bude histogram [z-skóre plochy]{.text-hgl-orange} souměrnější?
+
+::: columns
+::: {.column width="32%"}
+::: {.card-question}
+**A** · ano
+:::
+:::
+::: {.column width="32%"}
+::: {.card-question}
+**B** · trochu
+:::
+:::
+::: {.column width="32%"}
+::: {.card-question}
+**C** · [ne]{.rn-circle-orange fragment-index=2}
+:::
+:::
+:::
+
+::: {.fragment fragment-index=1}
+```{r}
+#| label: zobrazit-z-skore-plochy
+#| echo: false
+#| fig-height: 2.6
+#| fig-alt: "Dva histogramy se stejným extrémně pravostranně šikmým tvarem. Vlevo je osa v km², vpravo v jednotkách směrodatné odchylky kolem nuly."
+data_ostrovy$plocha_z <- as.numeric(scale(data_ostrovy$plocha_km2))
+
+vec_skaly_z <- c("Plocha (km²)", "z-skóre plochy")
+
+data_z_plocha <-
+  tibble::tibble(
+    skala = factor(
+      x = rep(x = vec_skaly_z, each = pocet_ostrovu),
+      levels = vec_skaly_z
+    ),
+    hodnota = c(data_ostrovy$plocha_km2, data_ostrovy$plocha_z)
+  )
+
+ggplot2::ggplot(data = data_z_plocha, mapping = ggplot2::aes(x = hodnota)) +
+  ggplot2::geom_histogram(bins = 15, fill = barva_data, colour = "white") +
+  ggplot2::facet_wrap(facets = ggplot2::vars(skala), scales = "free_x") +
+  ggplot2::scale_x_continuous(labels = function(x) format_cz(x, 0), n.breaks = 4) +
+  skala_y_pocty +
+  ggplot2::labs(x = NULL, y = "Počet ostrovů") +
+  theme_l10
+```
+:::
+
+::: {.fragment fragment-index=3 .box-rule}
+Jednotky, centrování i z-skóre jsou **lineární transformace**: násobí a posouvají o stejné číslo. Tvar [nezmění]{.text-hgl-graphite}.
+:::
+
+::::
+
+## Jak logaritmus převádí násobky na stejné kroky?
+
+::: columns
+::: {.column width="46%"}
+| Plocha (km²) | `log(plocha)` |
+|---|---|
+| 1 | `r format_cz(log(1), 3)` |
+| 2 | `r format_cz(log(2), 3)` |
+| 4 | `r format_cz(log(4), 3)` |
+| 8 | `r format_cz(log(8), 3)` |
+| 16 | [?]{.text-hgl-orange} [`r format_cz(log(16), 3)`]{.fragment} |
+
+[**Odhadněte** poslední řádek bez kalkulačky.]{.text-size-smaller}
+:::
+::: {.column width="52%"}
+::: {.fragment}
+Každé [zdvojnásobení]{.text-hgl-orange} přidá stejný krok [`r format_cz(log(2), 3)`]{.text-hgl-orange}. Logaritmus převádí [stejné poměry]{.text-hgl-orange} na [stejné rozdíly]{.text-hgl-orange}.
+:::
+
+::: {.fragment}
+```{r}
+#| label: spocitat-logaritmus
+#| echo: true
+log(x = c(1, 2, 4, 8))
+
+exp(x = log(x = 8))
+
+log(x = 0)
+```
+
+[`exp()` vrátí původní hodnotu. `log(0)` není konečné číslo: proměnné s nulami logaritmovat nelze.]{.text-size-smaller}
+:::
+:::
+:::
+
+::: {.notes}
+Callback L01: logaritmická osa tehdy měnila jen rozestupy v grafu; teď logaritmus používáme na samotné hodnoty. `exp()` vrátí původní hodnotu. `log(0)` není konečné číslo: proměnné se skutečnými nulami (vzdálenost Santa Cruz k sobě, ostrov bez endemitů) logaritmovat nelze. V modelech používáme přirozený logaritmus `log()`; `log10()` se hodí pro popis os.
+:::
+
+## Které histogramy plochy změní tvar?
+
+:::: {.layout-stack .layout-center-y}
+
+Stejnou plochu ostrovů zobrazíme ve čtyřech měřítkách. Které histogramy budou vypadat [jinak než histogram v km²]{.text-hgl-orange}?
+
+::: columns
+::: {.column width="24%"}
+::: {.card-data}
+**km²**
+
+`plocha_km2`
+:::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**z-skóre**
+
+`scale(plocha_km2)`
+:::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**[odmocnina]{.rn-circle-orange}**
+
+`sqrt(plocha_km2)`
+:::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**[logaritmus]{.rn-circle-orange}**
+
+`log(plocha_km2)`
+:::
+:::
+:::
+
+[Hlasujte pro každou kartu zvlášť: změní tvar, nebo ne?]{.text-size-smaller}
+
+::::
+
+## Stejné ostrovy ve čtyřech měřítkách
+
+```{r}
+#| label: zobrazit-ctyri-transformace
+#| echo: false
+#| fig-height: 4.4
+#| fig-alt: "Čtyři histogramy plochy ostrovů. Plocha v km² a z-skóre plochy mají stejný extrémně pravostranně šikmý tvar. Odmocnina plochy je stále pravostranně šikmá, ale méně. Logaritmus plochy je přibližně souměrný."
+vec_poradi_transformaci <- c("km²", "z-skóre", "odmocnina", "logaritmus")
+
+data_ctyri_transformace <-
+  tibble::tibble(
+    transformace = factor(
+      x = rep(x = vec_poradi_transformaci, each = pocet_ostrovu),
+      levels = vec_poradi_transformaci
+    ),
+    hodnota = c(
+      data_ostrovy$plocha_km2,
+      data_ostrovy$plocha_z,
+      sqrt(data_ostrovy$plocha_km2),
+      log(data_ostrovy$plocha_km2)
+    )
+  )
+
+ggplot2::ggplot(data = data_ctyri_transformace, mapping = ggplot2::aes(x = hodnota)) +
+  ggplot2::geom_histogram(bins = 12, fill = barva_data, colour = "white") +
+  ggplot2::facet_wrap(facets = ggplot2::vars(transformace), scales = "free_x", nrow = 1) +
+  skala_y_pocty +
+  ggplot2::scale_x_continuous(labels = function(x) format_cz(x, 0), n.breaks = 3) +
+  ggplot2::labs(x = "Hodnota po transformaci", y = "Počet ostrovů") +
+  theme_l10
+```
+
+::: incremental
+- z-skóre: [stejný tvar]{.text-hgl-graphite} jako km²;
+- odmocnina: šikmost [zmírní]{.text-hgl-orange}, ale neodstraní;
+- logaritmus: z extrémně šikmé plochy udělá [přibližně souměrné]{.text-hgl-orange} rozdělení. Takové veličině říkáme **log-normální**.
+:::
+
+::: {.notes}
+Logaritmus roztáhne malé hodnoty a stlačí velké: rozdíl mezi 1 a 10 km² je stejně velký jako mezi 1 000 a 10 000 km². Malé ostrovy z prvního koše se rozprostřou přes celou osu. Log-normální = souměrné po zlogaritmování; typicky vzniká násobením (simulace populací).
+:::
+
+## Které transformace mění jen měřítko a které i tvar?
+
+::: columns
+::: {.column width="64%" .text-size-smaller}
+| Transformace | V R | Mění | Kdy se hodí |
+|---|---|---|---|
+| jednotky | `x * 100` | [měřítko]{.text-hgl-graphite} | různé zdroje dat |
+| centrování | `x - mean(x)` | [měřítko]{.text-hgl-graphite} | smysluplný intercept |
+| z-skóre | `scale(x)` | [měřítko]{.text-hgl-graphite} | různé jednotky |
+| odmocnina | `sqrt(x)` | [tvar]{.text-hgl-orange} | mírně šikmé počty |
+| logaritmus | `log(x)` | [tvar]{.text-hgl-orange} | násobné změny |
+:::
+::: {.column width="34%"}
+```{r}
+#| label: zobrazit-ostrovy-hlina
+#| echo: false
+#| out-width: "100%"
+#| fig-alt: "Želva si prohlíží hliněnou figurku leguána s velmi dlouhým ocasem přes lupu, takže je větší, ale stejného tvaru; pěnkava vedle hlínu přemodelovává, aby ocas byl kratší."
+include_optional_figure(data_source = "ostrovy_hlina.png")
+```
+
+[`r ai_disclosure("ostrovy_hlina.png")`]{.text-size-tiny .text-right}
+:::
+:::
+
+::: {.takeaway-strip}
+Dlouhý ocas zkrátí jen transformace, která [mění tvar]{.text-hgl-orange}.
+:::
+
+::: {.notes}
+Ilustrace: lupa (změna jednotek, centrování, z-skóre) zvětší a posune obraz, ale dlouhý ocas zůstane; přemodelování (logaritmus, odmocnina) změní tvar. Logaritmus navíc mění i tvar vztahu mezi proměnnými — tím pokračuje další část.
+:::
+
+## Kde transformace v biologii pomáhají?
+
+```{r}
+#| label: nastavit-galerii-transformaci
+#| include: false
+vec_galerie <- c(
+  koncentrace = "galerie_koncentrace.png",
+  populace = "galerie_populace.png",
+  savci = "galerie_savci.png",
+  hmyz = "galerie_hmyz.png",
+  gradient = "galerie_gradient.png",
+  trend = "galerie_trend.png"
+)
+```
+
+:::: {.layout-stack .layout-center-y}
+
+::: columns
+::: {.column width="32%" .fragment}
+::: {.card-indigo .text-size-smaller}
+[Logaritmus · koncentrace]{.card-title}
+
+```{r}
+#| label: zobrazit-galerii-koncentrace
+#| echo: false
+#| out-width: "45%"
+#| fig-alt: "Zkumavky s roztoky hormonu, jejichž koncentrace se liší o několik řádů."
+include_optional_figure(data_source = vec_galerie[["koncentrace"]])
+```
+
+Hormony nebo toxiny se mezi vzorky liší [o řády]{.text-hgl-orange}.
+:::
+:::
+::: {.column width="32%" .fragment}
+::: {.card-indigo .text-size-smaller}
+[Logaritmus · populace]{.card-title}
+
+```{r}
+#| label: zobrazit-galerii-populace
+#| echo: false
+#| out-width: "45%"
+#| fig-alt: "Populace mšic na listu roste z několika jedinců na celou kolonii."
+include_optional_figure(data_source = vec_galerie[["populace"]])
+```
+
+Populace rostou [o procenta]{.text-hgl-orange}, ne o stejný počet.
+:::
+:::
+::: {.column width="32%" .fragment}
+::: {.card-indigo .text-size-smaller}
+[Logaritmus · velikost těla]{.card-title}
+
+```{r}
+#| label: zobrazit-galerii-savci
+#| echo: false
+#| out-width: "45%"
+#| fig-alt: "Myš, kočka a slon vedle sebe ukazují obrovský rozsah hmotností savců."
+include_optional_figure(data_source = vec_galerie[["savci"]])
+```
+
+Hmotnosti savců od myši po slona se liší [o řády]{.text-hgl-orange}.
+:::
+:::
+:::
+
+
+
+::: columns
+::: {.column width="32%" .fragment}
+::: {.card-amethyst .text-size-smaller}
+[Odmocnina · počty s nulami]{.card-title}
+
+```{r}
+#| label: zobrazit-galerii-hmyz
+#| echo: false
+#| out-width: "45%"
+#| fig-alt: "Zemní pasti s různým počtem brouků, některé prázdné."
+include_optional_figure(data_source = vec_galerie[["hmyz"]])
+```
+
+Hmyz v pastech: mírná šikmost a [prázdné pasti]{.text-hgl-orange}.
+:::
+:::
+::: {.column width="32%" .fragment}
+::: {.card-data .text-size-smaller}
+[z-skóre · gradient prostředí]{.card-title}
+
+```{r}
+#| label: zobrazit-galerii-gradient
+#| echo: false
+#| out-width: "45%"
+#| fig-alt: "Lokality na svahu hory s teploměrem, dešťovým mrakem a výškovou značkou."
+include_optional_figure(data_source = vec_galerie[["gradient"]])
+```
+
+Teplota, srážky a výška [v různých jednotkách]{.text-hgl-graphite}.
+:::
+:::
+::: {.column width="32%" .fragment}
+::: {.card-data .text-size-smaller}
+[Centrování · trend v čase]{.card-title}
+
+```{r}
+#| label: zobrazit-galerii-trend
+#| echo: false
+#| out-width: "45%"
+#| fig-alt: "Ornitolog počítá ptáky na stejném místě v řadě let."
+include_optional_figure(data_source = vec_galerie[["trend"]])
+```
+
+Intercept pro [první rok sledování]{.text-hgl-graphite}, ne pro rok 0.
+:::
+:::
+:::
+
+::::
+
+[`r if (any(file.exists(here::here(path_materials, vec_galerie)))) "Ilustrace vytvořené pomocí AI." else ""`]{.text-size-tiny .text-right}
+
+::: {.notes}
+Příklady pocházejí z rámečků „Kdy používáme…“ ve skriptech. Fialové karty mění tvar silně (logaritmus), ametystová mírně (odmocnina), šedé jen měřítko. Kdy ne: proměnné s nulami nebo zápornými hodnotami logaritmovat nelze; pokud jsou residua v pořádku a biologické tvrzení je aditivní, transformace není potřeba.
+:::
+
+## Stejní savci v kilogramech a po logaritmu
+
+```{r}
+#| label: pripravit-savce
+#| include: false
+data_savci <- data.frame(hmotnost_kg = ggplot2::msleep$bodywt)
+pocet_savcu <- nrow(data_savci)
+pocet_odlehlych_kg <- length(grDevices::boxplot.stats(data_savci$hmotnost_kg)$out)
+pocet_odlehlych_log <- length(grDevices::boxplot.stats(log(data_savci$hmotnost_kg))$out)
+```
+
+```{r}
+#| label: zobrazit-savce
+#| echo: false
+#| fig-height: 3.8
+#| fig-alt: "Dva histogramy tělesné hmotnosti savců. V kilogramech jsou téměř všechny druhy v prvním koši a několik obřích druhů tvoří dlouhý ocas vpravo. Po logaritmu jsou druhy rozložené přibližně souměrně."
+vec_skaly_savci <- c("Hmotnost (kg)", "Logaritmus hmotnosti")
+
+data_savci_dve_skaly <- data.frame(
+  skala = factor(
+    x = rep(x = vec_skaly_savci, each = pocet_savcu),
+    levels = vec_skaly_savci
+  ),
+  hodnota = c(data_savci$hmotnost_kg, log(data_savci$hmotnost_kg))
+)
+
+ggplot2::ggplot(data = data_savci_dve_skaly, mapping = ggplot2::aes(x = hodnota)) +
+  ggplot2::geom_histogram(bins = 15, fill = barva_data, colour = "white") +
+  ggplot2::facet_wrap(facets = ggplot2::vars(skala), scales = "free_x") +
+  ggplot2::scale_x_continuous(labels = function(x) format_cz(x, 0), n.breaks = 4) +
+  skala_y_pocty +
+  ggplot2::labs(x = NULL, y = "Počet druhů savců") +
+  theme_l10
+```
+
+::: {.panel-question .text-size-smaller}
+**Ve dvojici:** V první lekci krabicový graf označil `r pocet_odlehlych_kg` druhů jako možná odlehlé. Kolik jich bude po logaritmu?
+:::
+
+::: {.fragment .text-size-smaller}
+Po logaritmu [`r pocet_odlehlych_log`]{.text-hgl-orange}. Největší savci leželi jen v [dlouhém ocasu]{.text-hgl-orange} šikmého rozdělení — co je odlehlé, záleží na škále.
+:::
+
+[Data: `ggplot2::msleep` (`r pocet_savcu` druhů savců), stejná jako v první lekci]{.footer}
+
+::: {.notes}
+Krabicový graf v L01 počítal hranice odlehlých hodnot v kilogramech. Po logaritmu žádný druh za vousy neleží: velcí savci jsou skutečně velcí, ale na násobné škále, na které se velikost organismů mění, tolik nevybočují.
+:::
+
+# Tvar vztahu
+
+## Jak vypadá vztah plochy a počtu druhů na logaritmických osách?
+
+::: {.panel-question}
+Logaritmus z šikmé plochy udělal souměrné rozdělení. Co udělá s [ohybem]{.text-hgl-orange} ve vztahu plochy a počtu druhů?
+:::
+
+::: {.fragment}
+```{r}
+#| label: zobrazit-vztah-na-dvou-skalach
+#| echo: false
+#| fig-height: 3.3
+#| fig-alt: "Dva bodové grafy stejných ostrovů. Vlevo na původních osách je většina bodů namačkaná u počátku a vztah je zakřivený. Vpravo po logaritmování obou proměnných jsou body rozprostřené po celém grafu a leží přibližně podél přímky."
+graf_puvodni_osy <-
+  graf_kotva +
+  ggplot2::labs(title = "Původní osy") +
+  ggplot2::theme(plot.title = ggplot2::element_text(size = 18))
+
+graf_log_osy <-
+  ggplot2::ggplot(
+    data = data_ostrovy,
+    mapping = ggplot2::aes(x = log(plocha_km2), y = log(pocet_druhu))
+  ) +
+  ggplot2::geom_point(colour = barva_data, size = 3, alpha = 0.85) +
+  ggplot2::scale_x_continuous(labels = function(x) format_cz(x, 0)) +
+  ggplot2::labs(
+    x = "log(plocha)",
+    y = "log(počet druhů)",
+    title = "Logaritmy obou proměnných"
+  ) +
+  theme_l10 +
+  ggplot2::theme(plot.title = ggplot2::element_text(size = 18))
+
+cowplot::plot_grid(graf_puvodni_osy, graf_log_osy, nrow = 1)
+```
+:::
+
+::: {.fragment .text-size-smaller}
+**Ve dvojici:** Stejný krok na logaritmické ose = stejný [násobek]{.text-hgl-orange}. Co by přímka na pravých osách znamenala pro ostrovy?
+:::
+
+::: {.notes}
+Odpověď nechte na další snímek: vynásobení plochy určitým číslem vynásobí počet druhů jiným, stále stejným číslem. Jméno mocninný vztah zazní u kandidáta C.
+:::
+
+## Jaké tvary vztahu dávají biologický smysl?
+
+::: {.panel-question .text-size-smaller}
+**Ve dvojici:** Které tvrzení zní nejméně věrohodně pro ostrov o `r format_cz(plocha_min, 2)` km² i pro ostrov o `r format_cz(plocha_max, 0)` km²?
+:::
+
+::: columns
+::: {.column width="32%"}
+::: {.card-indigo .text-size-smaller}
+[A · Přímka]{.card-title}
+
+Každý další km² přidá [stejný počet]{.text-hgl-indigo_velvet} druhů.
+
+[`pocet_druhu ~ plocha_km2`]{.fragment}
+:::
+:::
+::: {.column width="32%"}
+::: {.card-indigo .text-size-smaller}
+[B · Logaritmus plochy]{.card-title}
+
+Každé zdvojnásobení plochy přidá [stejný počet]{.text-hgl-indigo_velvet} druhů.
+
+[`pocet_druhu ~ log(plocha_km2)`]{.fragment}
+:::
+:::
+::: {.column width="32%"}
+::: {.card-indigo .text-size-smaller}
+[C · Mocninný vztah]{.card-title}
+
+Každé zdvojnásobení plochy [vynásobí]{.text-hgl-indigo_velvet} počet druhů stejným číslem.
+
+[`log(pocet_druhu) ~ log(plocha_km2)` · *power law*]{.fragment}
+:::
+:::
+:::
+
+::: columns
+::: {.column width="32%"}
+::: {.card-indigo .text-size-smaller}
+[D · Kvadratický člen]{.card-title}
+
+Počet druhů roste [stále pomaleji]{.text-hgl-indigo_velvet}, případně se pak obrátí.
+
+[`pocet_druhu ~ plocha_km2 + I(plocha_km2^2)`]{.fragment}
+:::
+:::
+::: {.column width="32%"}
+::: {.card-indigo .text-size-smaller}
+[E · Logaritmus odezvy]{.card-title}
+
+Každý další km² zvýší počet druhů o [stejné procento]{.text-hgl-indigo_velvet}.
+
+[`log(pocet_druhu) ~ plocha_km2`]{.fragment}
+:::
+:::
+::: {.column width="32%"}
+
+<br>
+
+::: {.fragment}
+Sadu kandidátů určíme [předem]{.text-hgl-orange} — z biologie, ne z výsledků.
+:::
+:::
+:::
+
+::: {.notes}
+Přímka na logaritmických osách z minulého snímku je kandidát C. A: první km² malého ostrova přidá stejně druhů jako tisící km² velkého. D: parabola musí po vrcholu klesat. E: zrychlující růst, u největších ostrovů obrovské počty druhů. B a C popisují zpomalující růst pomocí násobků plochy.
+:::
+
+## Všech pět kandidátů odhadne funkce `lm()`
+
+::: columns
+::: {.column width="50%"}
+```{r}
+#| label: odhadnout-kandidaty-abc
+#| echo: true
+mod_a_primka <- lm(
+  formula = pocet_druhu ~ plocha_km2,
+  data = data_ostrovy
+)
+
+mod_b_log_plochy <- lm(
+  formula = pocet_druhu ~ log(plocha_km2),
+  data = data_ostrovy
+)
+
+mod_c_mocninny <- lm(
+  formula = log(pocet_druhu) ~ log(plocha_km2),
+  data = data_ostrovy
+)
+```
+:::
+::: {.column width="50%"}
+```{r}
+#| label: odhadnout-kandidaty-de
+#| echo: true
+mod_d_kvadraticky <- lm(
+  formula = pocet_druhu ~ plocha_km2 +
+    I(plocha_km2^2),
+  data = data_ostrovy
+)
+
+mod_e_log_odezvy <- lm(
+  formula = log(pocet_druhu) ~ plocha_km2,
+  data = data_ostrovy
+)
+```
+
+<br>
+
+::: {.fragment .text-size-smaller}
+`I()` říká R: spočítej `plocha_km2^2` jako obyčejnou druhou mocninu.
+:::
+:::
+:::
+
+::: {.fragment .takeaway-strip}
+„Lineární“ model znamená [lineární v koeficientech]{.text-hgl-indigo_velvet}, ne nutně přímku v grafu.
+:::
+
+[Počet druhů je počet. Modely, které s počty pracují přímo, poznáme v jedné z dalších lekcí.]{.footer}
+
+## Jak se kandidátní křivky shodují s ostrovy?
+
+```{r}
+#| label: spocitat-krivky-kandidatu
+#| include: false
+vec_poradi_kandidatu <- c(
+  "A · Přímka",
+  "B · Logaritmus plochy",
+  "C · Mocninný vztah",
+  "D · Kvadratický člen",
+  "E · Logaritmus odezvy"
+)
+
+data_mrizka_plochy <-
+  tibble::tibble(
+    plocha_km2 = exp(
+      seq(from = log(plocha_min), to = log(plocha_max), length.out = 300)
+    )
+  )
+
+data_krivky_kandidatu <-
+  tibble::tibble(
+    kandidat = factor(
+      x = rep(x = vec_poradi_kandidatu, each = nrow(data_mrizka_plochy)),
+      levels = vec_poradi_kandidatu
+    ),
+    plocha_km2 = rep(x = data_mrizka_plochy$plocha_km2, times = 5),
+    pocet_druhu = c(
+      predict(object = mod_a_primka, newdata = data_mrizka_plochy),
+      predict(object = mod_b_log_plochy, newdata = data_mrizka_plochy),
+      exp(predict(object = mod_c_mocninny, newdata = data_mrizka_plochy)),
+      predict(object = mod_d_kvadraticky, newdata = data_mrizka_plochy),
+      exp(predict(object = mod_e_log_odezvy, newdata = data_mrizka_plochy))
+    )
+  )
+```
+
+```{r}
+#| label: zobrazit-krivky-kandidatu
+#| echo: false
+#| fig-height: 5
+#| fig-alt: "Pět panelů se stejnými šedými ostrovy a fialovou křivkou kandidáta. Přímka A vede nad většinou malých ostrovů. Křivky B a C rostou rychle u malých ostrovů a pak zpomalují. Parabola D vystoupá a před největším ostrovem začne klesat. Exponenciála E je téměř plochá a na konci prudce stoupá."
+ggplot2::ggplot(
+  data = data_krivky_kandidatu,
+  mapping = ggplot2::aes(x = plocha_km2, y = pocet_druhu)
+) +
+  ggplot2::geom_point(
+    data = data_ostrovy,
+    colour = barva_data,
+    size = 2.2,
+    alpha = 0.85
+  ) +
+  ggplot2::geom_line(colour = barva_model, linewidth = 1.4) +
+  ggplot2::facet_wrap(facets = ggplot2::vars(kandidat), nrow = 2) +
+  skala_x_plocha +
+  ggplot2::coord_cartesian(xlim = osa_x_kotva, ylim = osa_y_kotva) +
+  ggplot2::labs(x = "Plocha ostrova (km²)", y = "Počet druhů") +
+  theme_l10 +
+  ggplot2::theme(strip.text = ggplot2::element_text(size = 16, face = "bold"))
+```
+
+::: {.panel-question}
+**Ve dvojici:** Která křivka tvrdí o ostrovech něco, co by biolog nepřijal?
+:::
+
+::: {.notes}
+Odhady C a E jsou převedené zpět na počet druhů funkcí `exp()`, aby všech pět kandidátů leželo na stejných osách. Body i osy jsou ve všech panelech stejné jako na prvním grafu s přímkou.
+:::
+
+## Proč by měl větší ostrov mít méně druhů?
+
+```{r}
+#| label: spocitat-vrchol-paraboly
+#| include: false
+koef_kvadraticky <- coef(object = mod_d_kvadraticky)
+plocha_vrchol_paraboly <-
+  -koef_kvadraticky[["plocha_km2"]] /
+  (2 * koef_kvadraticky[["I(plocha_km2^2)"]])
+ostrovy_za_vrcholem <-
+  data_ostrovy$ostrov[data_ostrovy$plocha_km2 > plocha_vrchol_paraboly]
+cook_max_kvadraticky <- max(cooks.distance(model = mod_d_kvadraticky))
+```
+
+::: columns
+::: {.column width="58%"}
+```{r}
+#| label: zobrazit-parabolu
+#| echo: false
+#| fig-width: 7
+#| fig-height: 5
+#| fig-alt: "Ostrovy na původních osách s fialovou parabolou kandidáta D. Svislá přerušovaná čára označuje vrchol paraboly; za ním křivka klesá. Isabela je zvýrazněná oranžově vpravo za vrcholem."
+graf_kotva +
+  ggplot2::geom_line(
+    data = data_krivky_kandidatu[data_krivky_kandidatu$kandidat == vec_poradi_kandidatu[4], ],
+    colour = barva_model,
+    linewidth = 1.6
+  ) +
+  ggplot2::geom_vline(
+    xintercept = plocha_vrchol_paraboly,
+    linetype = "dashed",
+    colour = barva_reference
+  ) +
+  ggplot2::geom_point(data = data_isabela, colour = barva_fokus, size = 4.5) +
+  ggplot2::annotate(
+    geom = "text",
+    x = plocha_vrchol_paraboly,
+    y = 30,
+    label = paste0("vrchol ≈ ", format_cz(plocha_vrchol_paraboly, 0), " km²"),
+    hjust = 1.05,
+    size = 6,
+    colour = barva_reference
+  ) +
+  ggplot2::labs(title = vec_poradi_kandidatu[4])
+```
+:::
+::: {.column width="40%"}
+```{r}
+#| label: zobrazit-ostrovy-parabola
+#| echo: false
+#| out-width: "100%"
+#| fig-alt: "Kamenný most stoupá přes řadu stále větších ostrovů, ale nad tím největším a nejzelenějším začne klesat; želva na vrcholu mostu se nechápavě dívá dolů."
+include_optional_figure(data_source = "ostrovy_parabola.png")
+```
+
+[`r ai_disclosure("ostrovy_parabola.png")`]{.text-size-tiny .text-right}
+
+Za vrcholem leží jen [`r paste(ostrovy_za_vrcholem, collapse = ", ")`]{.text-hgl-orange} — s Cookovou vzdáleností [`r format_cz(cook_max_kvadraticky, 0)`]{.text-hgl-orange}.
+:::
+:::
+
+::: {.fragment .takeaway-strip}
+Parabola se [musí obrátit]{.text-hgl-orange}. K Isabele se ohýbá jen proto, že ji Isabela táhne.
+:::
+
+::: {.notes}
+Biologický důvod, proč by větší ostrov měl mít méně druhů, nemáme. Ilustrace: most nad stále většími ostrovy, který nad tím největším a nejzelenějším začne klesat. Předpovědi za okrajem dat jsou u paraboly obzvlášť riskantní.
+:::
+
+##
+
+```{r}
+#| label: spocitat-aic-kandidatu
+#| include: false
+aic_c <- AIC(object = mod_c_mocninny)
+aic_d <- AIC(object = mod_d_kvadraticky)
+```
+
+:::: {.layout-stack .layout-center-y}
+
+::: {.box-question}
+[Je mocninný vztah C podle AIC mnohem lepší než kvadratický člen D?]{.text-size-heading .text-bold}
+
+D · odezva `pocet_druhu` · AIC [`r format_cz(aic_d, 1)`]{.text-hgl-indigo_velvet}
+
+C · odezva `log(pocet_druhu)` · AIC [`r format_cz(aic_c, 1)`]{.text-hgl-indigo_velvet}
+:::
+
+::: columns
+::: {.column width="24%"}
+::: {.card-question}
+**A**
+
+Ano, AIC modelu C je o `r format_cz(aic_d - aic_c, 0)` nižší, takže C popisuje ostrovy mnohem lépe.
+:::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**B**
+
+[Ne, každý z modelů předpovídá jinou odezvu, takže jejich AIC porovnat nelze.]{.rn-circle-orange}
+:::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**C**
+
+Ano, protože mocninný vztah má méně koeficientů, a proto nižší AIC.
+:::
+:::
+::: {.column width="24%"}
+::: {.card-question}
+**D**
+
+Ne, protože AIC nelze porovnat mezi žádnými dvěma modely, ani se stejnou odezvou.
+:::
+:::
+:::
+
+::: {.panel-olive}
+Přesvědčte souseda, proč jste vybrali svoji možnost.
+:::
+
+::: {.fragment}
+Pravidlo z minulé lekce: AIC porovnáváme jen u modelů se [stejnou odezvou]{.text-hgl-orange} na stejných pozorováních. Logaritmus stlačí velké hodnoty, takže residua C jsou čísla v úplně jiném měřítku.
+:::
+
+::::
+
+::: {.notes}
+Odpověď B. Rozdíl vypadá obrovsky, ale nic neříká. Stejné omezení platí pro R².
+:::
+
+## Které modely smíme porovnat pomocí AIC?
+
+```{r}
+#| label: spocitat-zbyvajici-aic
+#| include: false
+aic_a <- AIC(object = mod_a_primka)
+aic_b <- AIC(object = mod_b_log_plochy)
+aic_e <- AIC(object = mod_e_log_odezvy)
+```
+
+::: columns
+::: {.column width="48%"}
+::: {.panel-data}
+[Odezva: počet druhů]{.panel-title}
+
+| Kandidát | AIC |
+|---|---|
+| A · Přímka | `r format_cz(aic_a, 1)` |
+| B · Logaritmus plochy | `r format_cz(aic_b, 1)` |
+| D · Kvadratický člen | [`r format_cz(aic_d, 1)`]{.text-hgl-indigo_velvet} |
+:::
+:::
+::: {.column width="48%"}
+::: {.panel-data}
+[Odezva: logaritmus počtu druhů]{.panel-title}
+
+| Kandidát | AIC |
+|---|---|
+| E · Logaritmus odezvy | `r format_cz(aic_e, 1)` |
+| C · Mocninný vztah | [`r format_cz(aic_c, 1)`]{.text-hgl-indigo_velvet} |
+:::
+:::
+:::
+
+::: {.fragment .box-warning}
+Mezi modely pro počet druhů má nejnižší AIC [kvadratický člen D]{.text-hgl-orange} — křivka, kterou jsme odmítli kvůli jejímu tvaru. Nejnižší AIC [neznamená biologicky obhajitelný model]{.text-hgl-orange}; rozhoduje i biologie a residua.
+:::
+
+::: {.fragment .text-size-smaller}
+A co R²? Ani to tabulky nespojí: R² modelu D je podíl variability [počtu druhů]{.text-hgl-orange}, R² modelu C podíl variability [jeho logaritmu]{.text-hgl-orange}. Napříč škálami porovnáváme [křivky na původních osách a vzory v residuích]{.text-hgl-indigo_velvet} (ne jejich velikost).
+:::
+
+::: {.notes}
+Každou tabulku porovnáváme jen uvnitř. Ve skupině s logaritmem odezvy vychází mocninný vztah C mnohem lépe než E. Kontrola ze skript: přidat k C kvadratický člen logaritmu plochy nepomůže (AIC vzroste).
+:::
+
+## Pomohl logaritmus také residuím?
+
+```{r}
+#| label: ulozit-diagnostiku-mocninneho-vztahu
+#| include: false
+cook_max_mocninny <- max(cooks.distance(model = mod_c_mocninny))
+```
+
+```{r}
+#| label: zobrazit-diagnostiku-mocninneho-vztahu
+#| echo: false
+#| fig-height: 4
+#| fig-alt: "Tři diagnostické grafy mocninného vztahu. Residua tvoří přibližně stejně široký vodorovný pás kolem nuly, histogram je přibližně souměrný a body Q–Q grafu leží blízko přímky."
+vykreslit_diagnostiku(model = mod_c_mocninny, popisek_residua = "Residuum (log)")
+```
+
+::: {.panel-question}
+**Ve dvojici:** Co se změnilo proti residuím přímky?
+:::
+
+::: {.fragment .text-size-smaller}
+Pás bez [ohybu]{.text-hgl-orange} i [rostoucího rozptylu]{.text-hgl-orange} · Q–Q graf blízko přímky · největší Cookova vzdálenost [`r format_cz(cook_max_mocninny, 2)`]{.text-hgl-indigo_velvet} místo `r format_cz(cook_max_primka, 1)`. S `r pocet_ostrovu` ostrovy čteme opatrně, ale všechny grafy ukazují stejným směrem.
+:::
+
+::: {.notes}
+Vějíř zmizel, protože logaritmus převádí stejné relativní rozptýlení na stejné absolutní. Callback L06: diagnostický graf není automatický příkaz k transformaci; zde transformujeme proto, že biologie předpovídá násobné změny.
+:::
+
+## Může být odezva šikmá, a residua přesto v pořádku?
+
+::: columns
+::: {.column width="48%"}
+```{r}
+#| label: zobrazit-sikmou-odezvu
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.8
+#| fig-alt: "Histogram počtu druhů s dlouhým ocasem vpravo."
+graf_hist_druhy +
+  ggplot2::labs(title = "Odezva: počet druhů")
+```
+
+[Odezva má [dlouhý ocas vpravo]{.text-hgl-orange}.]{.text-size-smaller}
+:::
+::: {.column width="48%"}
+```{r}
+#| label: zobrazit-qq-modelu-b
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3.8
+#| fig-alt: "Q–Q graf residuí kandidáta B; body leží blízko přerušované přímky."
+ggplot2::ggplot(
+  data = data.frame(residuum = residuals(object = mod_b_log_plochy)),
+  mapping = ggplot2::aes(sample = residuum)
+) +
+  ggplot2::stat_qq(colour = barva_data, size = 2.8) +
+  ggplot2::stat_qq_line(colour = barva_reference, linetype = "dashed", linewidth = 1) +
+  ggplot2::labs(
+    x = "Teoretický kvantil",
+    y = "Residuum (druhy)",
+    title = "Residua kandidáta B (logaritmus plochy)"
+  ) +
+  theme_l10 +
+  ggplot2::theme(plot.title = ggplot2::element_text(size = 17))
+```
+
+[Residua B leží [blízko přímky]{.text-hgl-graphite}.]{.text-size-smaller}
+:::
+:::
+
+::: {.fragment .takeaway-strip}
+Šikmost odezvy z velké části vysvětlil šikmý prediktor. Předpoklad se týká [residuí]{.text-hgl-orange}, ne samotné odezvy.
+:::
+
+::: {.notes}
+Návrat k MCQ „Co musí mít přibližně normální rozdělení?“. Kandidáta B přesto nevybíráme. Lepším modelem to B nedělá: jeho residua se směrem doprava rozšiřují (vidět v panelu B na snímku s kandidátními křivkami a ve skriptech).
+:::
+
+# Interpretace po transformaci
+
+## Kolikrát víc druhů má dvakrát větší ostrov?
+
+```{r}
+#| label: ulozit-koeficienty-mocninneho-vztahu
+#| include: false
+tidy_mocninny <- broom::tidy(x = mod_c_mocninny, conf.int = TRUE)
+
+exponent <- tidy_mocninny$estimate[tidy_mocninny$term == "log(plocha_km2)"]
+exponent_dolni <- tidy_mocninny$conf.low[tidy_mocninny$term == "log(plocha_km2)"]
+exponent_horni <- tidy_mocninny$conf.high[tidy_mocninny$term == "log(plocha_km2)"]
+
+stopifnot(isTRUE(all.equal(exponent, coef(mod_c_mocninny)[["log(plocha_km2)"]])))
+```
+
+::: columns
+::: {.column width="50%" .text-size-smaller}
+```{r}
+#| label: tabulka-koeficientu-mocninneho-vztahu
+#| echo: false
+knitr::kable(
+  x = data.frame(
+    Člen = c("intercept", "log(plocha)"),
+    Odhad = format_cz(tidy_mocninny$estimate, 3),
+    `95% interval` = paste0(
+      format_cz(tidy_mocninny$conf.low, 2),
+      " až ",
+      format_cz(tidy_mocninny$conf.high, 2)
+    ),
+    check.names = FALSE
+  ),
+  align = "lrr"
+)
+```
+
+[`log(pocet_druhu) ~ log(plocha_km2)`]{.text-size-smaller}
+:::
+::: {.column width="48%"}
+$$
+\text{násobek druhů} = \text{násobek plochy}^{\,\text{sklon}}
+$$
+
+::: {.fragment}
+$$
+2^{\,`r format_cz_math(exponent, 3)`} = `r format_cz_math(2^exponent, 2)`
+$$
+
+Dvakrát větší ostrov má typicky asi [`r format_cz(2^exponent, 2)`krát]{.text-hgl-indigo_velvet} víc druhů — ne dvakrát.
+:::
+:::
+:::
+
+::: {.fragment .panel-question}
+**Ve dvojici:** Kolikrát víc druhů má podle modelu [desetkrát]{.text-hgl-orange} větší ostrov?
+:::
+
+::: {.notes}
+Sklon na logaritmických osách se v ekologii nazývá exponent (obvykle značený z, nezaměňovat se z-skóre); pro souostroví se odhady pohybují zhruba mezi 0,2 a 0,4. Proč násobek plochy na sklon: zdvojnásobení zvětší log(plocha) o ln 2, tedy log(druhy) o sklon × ln 2; exp() to převede zpět na násobek.
+:::
+
+## Desetkrát větší ostrov má asi `r format_cz(10^exponent, 2)`krát víc druhů
+
+```{r}
+#| label: spocitat-typicke-ostrovy
+#| include: false
+data_nove_plochy <- data.frame(plocha_km2 = c(1, 10, 100, 1000))
+data_nove_plochy$pocet_druhu <-
+  exp(predict(object = mod_c_mocninny, newdata = data_nove_plochy))
+```
+
+::: columns
+::: {.column width="58%"}
+```{r}
+#| label: zobrazit-mocninny-vztah
+#| echo: false
+#| fig-width: 7
+#| fig-height: 5
+#| fig-alt: "Ostrovy na původních osách s fialovou křivkou mocninného vztahu, která roste rychle u malých ostrovů a u velkých zpomaluje. Fialové body označují typický počet druhů pro plochy 1, 10, 100 a 1000 km²."
+graf_kotva +
+  ggplot2::geom_line(
+    data = data_krivky_kandidatu[data_krivky_kandidatu$kandidat == vec_poradi_kandidatu[3], ],
+    colour = barva_model,
+    linewidth = 1.6
+  ) +
+  ggplot2::geom_point(data = data_nove_plochy, colour = barva_model, size = 4.5) +
+  ggplot2::geom_text(
+    data = data_nove_plochy[data_nove_plochy$plocha_km2 >= 100, ],
+    mapping = ggplot2::aes(label = format_cz(pocet_druhu, 0)),
+    vjust = -1,
+    hjust = -0.2,
+    size = 6,
+    colour = barva_model
+  )
+```
+:::
+::: {.column width="40%"}
+
+<br>
+
+$$
+10^{\,`r format_cz_math(exponent, 3)`} = `r format_cz_math(10^exponent, 2)`
+$$
+
+95% interval: `r format_cz(10^exponent_dolni, 2)` až `r format_cz(10^exponent_horni, 2)`krát
+
+<br>
+
+Porovnejte se svým [odhadem ze začátku]{.text-hgl-orange} přednášky.
+:::
+:::
+
+::: {.fragment .box-warning}
+Zpětný převod `exp()` dává [typický]{.text-hgl-orange} ostrov dané plochy (blízko mediánu), ne průměrný.
+:::
+
+::: {.notes}
+Typické předpovědi: 1 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[1], 0)`, 10 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[2], 0)`, 100 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[3], 0)`, 1 000 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[4], 0)` druhů. Model odhaduje průměr logaritmu; po převodu exp() dostaneme geometrický průměr, který u log-normálních dat leží blízko mediánu (callback L01: medián pro asymetrická data).
+:::
+
+## Jak číst koeficient, když logaritmujeme jen jednu stranu?
+
+```{r}
+#| label: spocitat-cteni-jedne-strany
+#| include: false
+sklon_b <- coef(object = mod_b_log_plochy)[["log(plocha_km2)"]]
+prirustek_na_zdvojnasobeni <- sklon_b * log(2)
+
+sklon_e <- coef(object = mod_e_log_odezvy)[["plocha_km2"]]
+procento_na_sto_km2 <- 100 * (exp(100 * sklon_e) - 1)
+```
+
+:::: {.layout-stack .layout-center-y}
+
+::: {.panel-question}
+**Ve dvojici:** Přiřaďte každé větě kandidáta B, D, nebo E.
+:::
+
+::: columns
+::: {.column width="32%"}
+::: {.card-question}
+**1** · Každé zdvojnásobení plochy přidá asi [`r format_cz(prirustek_na_zdvojnasobeni, 1)` druhu]{.text-hgl-indigo_velvet}.
+
+[→ B · `pocet_druhu ~ log(plocha_km2)`]{.fragment .text-size-smaller}
+:::
+:::
+::: {.column width="32%"}
+::: {.card-question}
+**2** · Jak rychle počet druhů roste, [se mění podél křivky]{.text-hgl-indigo_velvet}.
+
+[→ D · kvadratický člen: čteme předpovědi, ne jednotlivé koeficienty]{.fragment .text-size-smaller}
+:::
+:::
+::: {.column width="32%"}
+::: {.card-question}
+**3** · Každých 100 km² zvýší počet druhů asi o [`r format_cz(procento_na_sto_km2, 0)` %]{.text-hgl-indigo_velvet}.
+
+[→ E · `log(pocet_druhu) ~ plocha_km2`]{.fragment .text-size-smaller}
+:::
+:::
+:::
+
+::: {.fragment .takeaway-strip}
+Logaritmus [prediktoru]{.text-hgl-orange} → přírůstek na zdvojnásobení · logaritmus [odezvy]{.text-hgl-orange} → procento na jednotku · oba → násobek
+:::
+
+::::
+
+::: {.notes}
+B: sklon × ln 2. E: exp(100 × sklon); pro malé sklony je 100 × sklon přibližně procento na jednotku. D: u paraboly jsou předpovědi mimo rozsah pozorovaných ploch obzvlášť riskantní.
+:::
+
+## Zmizí oblouk v residuích stromů po logaritmu průměru kmene?
+
+```{r}
+#| label: odhadnout-stromy
+#| include: false
+data_stromy <- read.csv(file = here::here("data", "allometrie_stromu.csv"))
+data_stromy$druh_stromu <- factor(x = data_stromy$druh_stromu)
+
+mod_stromy_primka <- lm(
+  formula = vyska_stromu_m ~ prumer_kmene_cm + druh_stromu,
+  data = data_stromy
+)
+
+mod_stromy_log <- lm(
+  formula = vyska_stromu_m ~ log(prumer_kmene_cm) + druh_stromu,
+  data = data_stromy
+)
+
+vec_modely_stromu <- c(
+  "Průměr kmene (minulá lekce)",
+  "Logaritmus průměru kmene"
+)
+
+data_residua_stromu <-
+  dplyr::bind_rows(
+    tibble::tibble(
+      model = vec_modely_stromu[1],
+      odhad = fitted(object = mod_stromy_primka),
+      residuum = residuals(object = mod_stromy_primka)
+    ),
+    tibble::tibble(
+      model = vec_modely_stromu[2],
+      odhad = fitted(object = mod_stromy_log),
+      residuum = residuals(object = mod_stromy_log)
+    )
+  ) |>
+  dplyr::mutate(model = factor(x = model, levels = vec_modely_stromu))
+```
+
+Výška roste s průměrem kmene [stále pomaleji]{.text-hgl-orange}. Co udělá s obloukem z minulé lekce logaritmus průměru kmene?
+
+::: {.fragment}
+```{r}
+#| label: zobrazit-residua-stromu
+#| echo: false
+#| fig-height: 2.9
+#| fig-alt: "Dva grafy residuí modelů výšky stromů s oranžovou vyhlazenou křivkou. Vlevo s průměrem kmene tvoří křivka zřetelný oblouk. Vpravo s logaritmem průměru je křivka plošší; u stromů s odhadnutou výškou zhruba 10 až 20 m zůstává pod nulou, pro vyšší stromy leží u nuly."
+ggplot2::ggplot(
+  data = data_residua_stromu,
+  mapping = ggplot2::aes(x = odhad, y = residuum)
+) +
+  ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = barva_reference) +
+  ggplot2::geom_point(colour = barva_data, size = 2.4, alpha = 0.85) +
+  ggplot2::geom_smooth(
+    method = "loess",
+    formula = y ~ x,
+    se = FALSE,
+    colour = barva_fokus,
+    linewidth = 1.4
+  ) +
+  ggplot2::facet_wrap(facets = ggplot2::vars(model)) +
+  ggplot2::labs(x = "Odhadnutá výška stromu (m)", y = "Residuum (m)") +
+  theme_l10 +
+  ggplot2::theme(panel.spacing.x = ggplot2::unit(2, "lines"))
+```
+:::
+
+::: {.fragment .text-size-smaller}
+Oblouk se [zploštil]{.text-hgl-orange}, ale nezmizel: stromy s odhadnutou výškou kolem 10–20 m model stále [přeceňuje]{.text-hgl-orange}. AIC `r format_cz(AIC(mod_stromy_primka), 0)` → [`r format_cz(AIC(mod_stromy_log), 0)`]{.text-hgl-indigo_velvet} — porovnat smíme, odezva je stejná.
+:::
+
+::: {.notes}
+Odpověď na otázku z L09: tvar vztahu byl hlavní, i když ne jediný problém. Residua pod nulou = model výšku přeceňuje; nejnižší stromy (odhad pod 10 m) leží mírně nad nulou. Kvadratický model stromů by měl AIC ještě nižší, ale jeho parabola pro nejširší stromy předpovídá nižší výšku — stejná lekce jako u ostrovů (viz skripta).
+:::
+
+# Závěr
+
+## Odpovězte na úvodní otázku dvěma větami
+
+::: columns
+::: {.column width="44%"}
+::: {.panel-data .text-size-smaller}
+[Co o ostrovech víme]{.panel-title}
+
+- `r pocet_ostrovu` ostrovů jednoho souostroví; odezva je počet druhů
+- na logaritmických osách leží ostrovy podél přímky
+- mocninný vztah: sklon [`r format_cz(exponent, 2)`]{.text-hgl-indigo_velvet} (95% interval `r format_cz(exponent_dolni, 2)` až `r format_cz(exponent_horni, 2)`)
+- dvojnásobná plocha → [`r format_cz(2^exponent, 2)`×]{.text-hgl-indigo_velvet} druhů; desetinásobná → [`r format_cz(10^exponent, 2)`×]{.text-hgl-indigo_velvet}
+- residua mocninného vztahu bez vzoru; přímka a parabola neobstály
+:::
+:::
+::: {.column width="54%"}
+
+<br>
+
+[40 s sami · ve dvojici porovnejte]{.text-size-smaller}
+
+„Počet druhů roste s plochou ostrova ____, protože ____.“
+
+„Omezením tohoto závěru je ____.“
+
+::: {.fragment}
+Použijte aspoň [jedno číslo s interpretací]{.text-hgl-indigo_velvet} a [jedno omezení]{.text-hgl-orange}.
+:::
+:::
+:::
+
+## Jak rychle roste počet druhů s plochou ostrova?
+
+:::: {.layout-stack .layout-center-y}
+
+::: {.box-result}
+Podle [mocninného vztahu]{.text-hgl-indigo_velvet} s exponentem asi `r format_cz(exponent, 2)` (95% interval `r format_cz(exponent_dolni, 2)` až `r format_cz(exponent_horni, 2)`): dvakrát větší ostrov má typicky asi [`r format_cz(2^exponent, 2)`krát]{.text-hgl-indigo_velvet} více druhů, desetkrát větší asi [`r format_cz(10^exponent, 2)`krát]{.text-hgl-indigo_velvet} více.
+:::
+
+::: columns
+::: {.column width="48%"}
+::: {.panel-result}
+[Opora]{.panel-title}
+
+- biologicky zdůvodněný tvar vztahu;
+- přímka na logaritmických osách;
+- residua bez systematického vzoru.
+:::
+:::
+::: {.column width="48%" .fragment}
+::: {.panel-question}
+[Omezení]{.panel-title}
+
+- jen `r pocet_ostrovu` ostrovů;
+- odezva je [počet]{.text-hgl-orange} — modely pro počty poznáme v jedné z dalších lekcí;
+- ostrovy jednoho souostroví nemusí být [nezávislé]{.text-hgl-orange}.
+:::
+:::
+:::
+
+::::
+
+::: {.notes}
+Plocha souvisí i s dalšími vlastnostmi ostrova (nadmořská výška, rozmanitost prostředí); mocninný vztah popisuje souvislost, ne to, že plocha sama druhy „vytváří“.
+:::
+
+## Kdy transformaci použít a kdy ne?
+
+::: columns
+::: {.column width="56%"}
+::: incremental
+1. Položte biologickou otázku a prohlédněte [tvar rozdělení]{.text-hgl-graphite}.
+2. Odhadněte nejjednodušší model a zkontrolujte [residua]{.text-hgl-orange}.
+3. Ptejte se, jaký tvar vztahu předpovídá biologie.
+4. Převeďte tvrzení na [kandidátní formule]{.text-hgl-indigo_velvet} s `log()` nebo `I(x^2)`.
+5. Porovnejte je na původní škále, residui a AIC [se stejnou odezvou]{.text-hgl-orange}.
+6. Interpretujte v původních jednotkách: násobky, zdvojnásobení, procenta.
+:::
+:::
+::: {.column width="42%" .fragment}
+
+<br>
+
+::: {.box-warning}
+**Transformace není rituál.** Volíme ji kvůli biologickému tvrzení o vztahu, [ne jen proto, aby residua „vypadala normálně“]{.text-hgl-orange}.
+:::
+:::
+:::
+
+## Co si odnést
+
+:::: {.layout-stack .layout-center-y}
+
+::: incremental
+- Mnoho biologických veličin je [pravostranně šikmých]{.text-hgl-orange}: hranice v nule a růst násobením.
+- Lineární model předpokládá přibližně normální [residua]{.text-hgl-orange}, ne odezvu nebo prediktor.
+- Jednotky, centrování a z-skóre mění [jen měřítko]{.text-hgl-graphite}; logaritmus a odmocnina [mění tvar]{.text-hgl-orange}.
+- Logaritmus převádí násobky na stejné kroky, a proto z [mocninného vztahu]{.text-hgl-indigo_velvet} udělá přímku.
+- AIC porovnáváme jen při [stejné odezvě]{.text-hgl-orange}; koeficienty po transformaci čteme jako násobky nebo přírůstky.
+:::
+
+::::
+
+[Data: M. P. Johnson & P. H. Raven (1973) · `faraway::galamiss` · GPL; stromy: `lgrdata::allometry` · CC0]{.footer}
+
+## Jsou ostrovy jednoho souostroví nezávislá pozorování?
+
+:::: {.layout-stack .layout-center-y}
+
+::: columns
+::: {.column width="58%"}
+```{r}
+#| label: zobrazit-ostrovy-propojeni
+#| echo: false
+#| out-width: "100%"
+#| fig-alt: "Ptáci a mořské proudy přenášejí semena mezi sousedními ostrovy souostroví; želva botanička je pozoruje ze břehu."
+include_optional_figure(data_source = "ostrovy_propojeni.png")
+```
+
+[`r ai_disclosure("ostrovy_propojeni.png")`]{.text-size-tiny .text-right}
+:::
+::: {.column width="40%"}
+[Sousední ostrovy si vyměňují semena, sdílejí podnebí i historii osídlení.]{.text-size-heading}
+
+::: {.fragment}
+[Dává `r pocet_ostrovu` ostrovů opravdu `r pocet_ostrovu` nezávislých kousků informace?]{.text-size-heading .text-bold .text-hgl-orange}
+:::
+:::
+:::
+
+::::
+
+::: {.notes}
+Neodpovídat. Ilustrace: ptáci a mořské proudy přenášejí semena mezi ostrovy, takže sousední ostrovy nejsou úplně oddělené. Na otázku závislých pozorování navazuje příští lekce. Modely, které pracují přímo s počty a podíly, přijdou v další lekci po ní.
+:::
