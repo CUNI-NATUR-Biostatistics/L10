@@ -50,7 +50,7 @@ Pro navazující praktické cvičení je připraven [R skript ke stažení](http
 - `data/` obsahuje datové soubory specifické pro tuto lekci a popis jejich původu.
 - `R/` obsahuje podporované renderovací a tematické nástroje a skript `prepare_galapagos_data.R` pro reprodukovatelnou přípravu výukových dat.
 - `theme/` obsahuje synchronizovanou lokální kopii společné vizuální identity kurzu.
-- `pollslive/` obsahuje neaktivní šablonu pro pozdější zapojení schváleného opakovacího kvízu; bez souborů `pollslive/config.json` a `pollslive/quiz.json` nijak nemění render lekce.
+- `pollslive/` obsahuje konfiguraci a otázky opakovacího kvízu L09; slidy obsahují i náhradní otázky pro výuku bez živého hlasování.
 - `Workflow/` obsahuje záznamy rozhodnutí, kontrol a schválení během přípravy lekce; není součástí veřejného release balíčku.
 
 ### Reprodukovatelné prostředí
@@ -72,7 +72,7 @@ Samostatně lze použít `R/render_skripta.R` nebo `R/render_presentation.R`. P�
 
 ### Publikování
 
-`website-release.yml` je explicitní seznam souborů povolených ve veřejném balíčku. Větev `main` vytváří veřejný náhled, zatímco stabilní tag `L10-vMAJOR.MINOR.PATCH-YYYYMMDD` vytváří neměnné vydání a aktualizuje cestu `/L10/current/`. Před prvním vydáním nahraďte v manifestu i v tomto README všechny zástupné údaje skutečnými hodnotami.
+`website-release.yml` je explicitní seznam souborů povolených ve veřejném balíčku. Větev `main` vytváří veřejný náhled, zatímco stabilní tag `L10-vMAJOR.MINOR.PATCH-YYYYMMDD` vytváří neměnné vydání a aktualizuje cestu `/L10/current/`.
 
 Podrobný publikační postup je v [`WEBSITE_RELEASES.md`](WEBSITE_RELEASES.md). Postup tvorby a kontroly lekce je v [`Workflow/README.md`](Workflow/README.md).
 
