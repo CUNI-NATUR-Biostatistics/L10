@@ -222,29 +222,26 @@ graf_q1 <-
 save_quiz_plot(graf_q1, "l09-r2-adjustovane.png")
 
 #----------------------------------------------------------#
-# 5. Q2: AIC and ΔAIC -----
+# 5. AIC without ΔAIC (students compute ΔAIC) -----
 #----------------------------------------------------------#
 
-data_q2 <-
+data_aic <-
   data.frame(
-    radek = rep(1:3, times = 2),
-    sloupec = rep(1:2, each = 3),
-    hodnota = c(
-      format_cz(data_metriky$aic, 2),
-      format_cz(data_metriky$delta_aic, 2)
-    )
+    radek = 1:3,
+    sloupec = 1L,
+    hodnota = format_cz(data_metriky$aic, 2)
   )
 
-graf_q2 <-
+graf_aic <-
   plot_metric_table(
-    data_cells = data_q2,
-    vec_headers = c("AIC", "ΔAIC"),
-    vec_x = c(0.65, 0.97),
+    data_cells = data_aic,
+    vec_headers = "AIC",
+    vec_x = 0.97,
     title = "AIC tří kandidátních modelů",
     subtitle = "odezva: vyska_stromu_m · stejných 63 stromů v každém modelu"
   )
 
-save_quiz_plot(graf_q2, "l09-delta-aic.png")
+save_quiz_plot(graf_aic, "l09-aic.png")
 
 #----------------------------------------------------------#
 # 6. Q3: residual arch of the shift model -----
