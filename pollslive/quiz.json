@@ -8,28 +8,57 @@
   "title": "L10 – Opakování předchozí lekce – 2026/27",
   "questions": [
     {
-      "id": "extra-slopes-not-worth-it",
-      "text": "Proč model Různé sklony nemá nejvyšší adjustované R², přestože má nejvyšší R²?",
+      "id": "delta-aic-ruzne-sklony",
+      "text": "Jaké je ΔAIC modelu Různé sklony?",
       "options": [
         {
-          "id": "adjusted-is-accuracy",
-          "label": "Adjustované R² je podíl správně předpovězených stromů."
+          "id": "nula",
+          "label": "0"
         },
         {
-          "id": "different-trees",
-          "label": "Model Různé sklony byl odhadnut z jiných stromů."
+          "id": "tri-cele-dve",
+          "label": "3,2"
         },
         {
-          "id": "gain-too-small",
-          "label": "Dva sklony navíc zlepšily shodu s daty příliš málo."
+          "id": "minus-dve-cele-osm",
+          "label": "−2,8"
         },
         {
-          "id": "always-lower",
-          "label": "Adjustované R² je u složitějšího modelu vždy nižší."
+          "id": "dve-cele-osm",
+          "label": "2,8"
         }
       ],
-      "correctOptionId": "gain-too-small",
-      "explanation": "R² po přidání koeficientů neklesne; adjustované R² za každý koeficient navíc penalizuje.",
+      "correctOptionId": "dve-cele-osm",
+      "explanation": "ΔAIC je rozdíl od nejnižšího AIC v sadě, tedy od modelu Posun mezi druhy: 398,27 − 395,44 ≈ 2,8. Nula patří nejlepšímu modelu a ΔAIC nikdy není záporné.",
+      "media": {
+        "path": "assets/l09-aic.png",
+        "alt": "Tabulka AIC tří kandidátních modelů pro výšku stromů ze stejných 63 stromů: Společná přímka 398,64, Posun mezi druhy 395,44, Různé sklony 398,27.",
+        "provenance": "Rendered by R/render_pollslive_assets.R from the approved L09 teaching data (data/allometrie_stromu.csv, line-ending-normalised SHA-256 pinned in the script) and the three L09 candidate models; checksum pinned in R/verify_pollslive_assets.R."
+      }
+    },
+    {
+      "id": "nahodny-prediktor",
+      "text": "Do modelu Různé sklony přidáme náhodná čísla, která s výškou stromu nesouvisejí. Co se stane?",
+      "options": [
+        {
+          "id": "obe-klesnou",
+          "label": "R² i adjustované R² obvykle klesnou."
+        },
+        {
+          "id": "r2-klesne-adj-vzroste",
+          "label": "R² obvykle klesne, adjustované R² vzroste."
+        },
+        {
+          "id": "r2-neklesne-adj-klesne",
+          "label": "R² neklesne, adjustované R² obvykle klesne."
+        },
+        {
+          "id": "obe-vzrostou",
+          "label": "R² i adjustované R² obvykle vzrostou."
+        }
+      ],
+      "correctOptionId": "r2-neklesne-adj-klesne",
+      "explanation": "R² po přidání koeficientu nikdy neklesne, ani u nesmyslného prediktoru. Adjustované R² za koeficient navíc penalizuje, takže bez skutečného zlepšení obvykle klesne.",
       "media": {
         "path": "assets/l09-r2-adjustovane.png",
         "alt": "Tabulka tří kandidátních modelů pro výšku stromů s počtem koeficientů, R² a adjustovaným R². Model Různé sklony má nejvyšší R², model Posun mezi druhy nejvyšší adjustované R².",
@@ -37,57 +66,28 @@
       }
     },
     {
-      "id": "delta-aic-zero",
-      "text": "Model Posun mezi druhy má ΔAIC = 0. Co to znamená?",
+      "id": "oblouk-co-s-tim",
+      "text": "Residua modelu Posun mezi druhy tvoří oblouk. Co s tím uděláme?",
       "options": [
         {
-          "id": "lowest-in-set",
-          "label": "Má nejnižší AIC z těchto tří kandidátů odhadnutých ze stejných 63 stromů."
+          "id": "zvolit-ruzne-sklony",
+          "label": "Zvolíme model Různé sklony, protože má nejvyšší R²."
         },
         {
-          "id": "zero-error",
-          "label": "Jeho residua jsou nulová, takže model předpovídá výšky bez chyby."
+          "id": "zakriveny-tvar",
+          "label": "Mezi kandidáty přidáme model se zakřiveným tvarem vztahu."
         },
         {
-          "id": "true-model",
-          "label": "Je to pravdivý model růstu stromů."
+          "id": "aic-uz-vybral",
+          "label": "Nic; AIC už z nabízených kandidátů vybral nejlepší model."
         },
         {
-          "id": "compare-anything",
-          "label": "Jeho AIC můžeme porovnat i s AIC modelu odhadnutého z jiných dat."
+          "id": "vyradit-stromy",
+          "label": "Vyřadíme stromy s největšími residui a model fitujeme znovu."
         }
       ],
-      "correctOptionId": "lowest-in-set",
-      "explanation": "ΔAIC = 0 označuje nejnižší AIC v této sadě kandidátů. Neříká nic o pravdivosti modelu; AIC porovnáváme jen při stejné odezvě a stejných pozorováních.",
-      "media": {
-        "path": "assets/l09-delta-aic.png",
-        "alt": "Tabulka AIC a ΔAIC tří kandidátních modelů pro výšku stromů; model Posun mezi druhy má ΔAIC rovné nule.",
-        "provenance": "Deterministically rendered by R/render_pollslive_assets.R from approved L09 teaching data (data/allometrie_stromu.csv, same content as L09 data/allometrie_stromu.csv at revision 1723cb5fffa5c7ace7b5dbba8f89852a1b1a4078; line-ending-normalised source SHA-256 454dde41426a44d5f206564c0d732f772ded8a1d4ff82816fcd3a4eaae7a9338); AIC values computed from the three L09 candidate models; asset SHA-256 9C5DD5176E606C7FED77FD557016D2B1EE3560B4CB1E88BD147B1B3E7DF9C4F2."
-      }
-    },
-    {
-      "id": "residual-arch",
-      "text": "Co prozrazuje oblouk v residuích modelu Posun mezi druhy?",
-      "options": [
-        {
-          "id": "mean-zero-fine",
-          "label": "Model je v pořádku, protože residua jsou v průměru nulová."
-        },
-        {
-          "id": "species-structure",
-          "label": "Stromy jednoho druhu jsou si podobnější než stromy různých druhů."
-        },
-        {
-          "id": "delete-trees",
-          "label": "Některé stromy jsou chybně změřené a je potřeba je vyřadit."
-        },
-        {
-          "id": "curved-relationship",
-          "label": "Přímky nezachycují tvar vztahu: krajní stromy model přeceňuje, střední podceňuje."
-        }
-      ],
-      "correctOptionId": "curved-relationship",
-      "explanation": "Residua pod nulou = model výšku přeceňuje. Oblouk ukazuje zakřivený vztah, který přímky nezachytí.",
+      "correctOptionId": "zakriveny-tvar",
+      "explanation": "Oblouk znamená, že přímky nevystihují tvar vztahu. AIC vybírá jen z nabídnutých kandidátů a i Různé sklony jsou přímky. Stromy kvůli tomu nemažeme.",
       "media": {
         "path": "assets/l09-oblouk-residui.png",
         "alt": "Bodový graf residuí modelu Posun mezi druhy proti odhadnuté výšce stromu s vyhlazenou křivkou. Residua nízkých a vysokých stromů leží převážně pod nulou, středních nad nulou.",
