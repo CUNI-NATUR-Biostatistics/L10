@@ -97,7 +97,7 @@ R.version.string
 # Graf residuí (osa x: odhadnuté hodnoty fitted(), osa y: residua
 # residuals()) čteme takto:
 # - vodorovný pás kolem nuly bez vzoru: přímka vztah vystihuje;
-# - oblouk nebo písmeno U: vztah je zakřivený, přímka ho nevystihuje;
+# - oblouk (tvar písmene U): vztah je zakřivený, přímka ho nevystihuje;
 # - vějíř (rozptyl roste zleva doprava): odchylky jsou u velkých hodnot
 #   větší než u malých.
 #
@@ -175,7 +175,7 @@ vec_hmotnost_ryb <-
 # 3. Nakreslete Q–Q graf výšky rostlin a Q–Q graf hmotnosti ryb, oba
 #    s referenční přímkou.
 # 4. Do komentáře popište tvar obou rozdělení slovy: je souměrné, nebo má
-#    dlouhý ocas na jedné straně? Jak se to projevilo na vztahu průměru
+#    dlouhý chvost na jedné straně? Jak se to projevilo na vztahu průměru
 #    a mediánu a v Q–Q grafu?
 
 # Vaše řešení:
@@ -193,7 +193,7 @@ vec_hmotnost_ryb <-
 #
 # Očekávaný výsledek:
 # Ryby váží asi od 6 do 453 g. Průměr je asi 68,9 g, medián asi 49,2 g.
-# Histogram má dlouhý ocas vpravo (pravostranně šikmé rozdělení)
+# Histogram má dlouhý chvost vpravo (pravostranně šikmé rozdělení)
 # a v Q–Q grafu se body vpravo nahoře zvedají vysoko nad přímku.
 # U rostlin je průměr (30,2 cm) téměř stejný jako medián (29,9 cm)
 # a body Q–Q grafu leží blízko přímky.
@@ -205,7 +205,7 @@ vec_hmotnost_ryb <-
 #--------------------------------------------------#
 ## Mění se tvar, když měníme jednotky? -----
 #--------------------------------------------------#
-# Tři transformace mění jen měřítko:
+# Tři transformace mění jen polohu a měřítko:
 # - změna jednotek: hmotnost v kg dostaneme jako hmotnost v g / 1000;
 # - centrování: od každé hodnoty odečteme průměr, takže nový průměr je 0;
 # - z-skóre: po centrování ještě vydělíme směrodatnou odchylkou.
@@ -246,7 +246,7 @@ vec_hmotnost_ryb <-
 #
 # Očekávaný výsledek:
 # Hmotnosti v kg leží asi od 0,006 do 0,453 kg. Histogram z-skóre má
-# stejný tvar s dlouhým ocasem vpravo jako histogram z U01; změnila se
+# stejný tvar s dlouhým chvostem vpravo jako histogram z U01; změnila se
 # jen čísla na ose x. Průměr z-skóre je prakticky 0. R ho může vypsat jako
 # velmi malé číslo, například 4.3e-17. Zápis e-17 znamená × 10^-17, tedy
 # prakticky nulu. Směrodatná odchylka z-skóre je přesně 1. Nejtěžší ryba
@@ -260,7 +260,7 @@ vec_hmotnost_ryb <-
 ## Které transformace mění tvar? -----
 #--------------------------------------------------#
 # Odmocnina a logaritmus mění tvar rozdělení: malé hodnoty od sebe
-# oddálí a velké k sobě přiblíží. Dlouhý ocas vpravo se tím zkrátí.
+# oddálí a velké k sobě přiblíží. Dlouhý chvost vpravo se tím zkrátí.
 #
 # Logaritmus převádí násobky na stejné kroky. Funkce log() počítá
 # přirozený logaritmus a exp() je jeho opak. Spusťte ukázku:
@@ -286,7 +286,7 @@ log(x = 0)
 #    tedy s hodnotou, kterou jsme zadali do receptu v ukázce před U01.
 # 5. Převeďte průměr logaritmů zpět funkcí exp(). Kolik gramů vyšlo?
 # 6. Do komentáře zapište, které transformace z U02 a U03 změnily tvar
-#    rozdělení a které jen měřítko.
+#    rozdělení a které jen polohu a měřítko.
 
 # Vaše řešení:
 
@@ -300,11 +300,12 @@ log(x = 0)
 # exp(x = mean(x = vec_hmotnost_log)).
 #
 # Očekávaný výsledek:
-# Po odmocnině má histogram stále ocas vpravo, ale kratší. Po logaritmu je
+# Po odmocnině má histogram stále chvost vpravo, ale kratší. Po logaritmu je
 # histogram přibližně souměrný a body Q–Q grafu leží blízko přímky.
 # Průměr logaritmů je asi 3,948, log(x = 50) je 3,912. exp() vrátí asi
 # 51,8 g, tedy hodnotu blízkou typické rybě z receptu (50 g). Tvar
-# změnily odmocnina a logaritmus; jednotky a z-skóre změnily jen měřítko.
+# změnily odmocnina a logaritmus; jednotky a z-skóre změnily jen polohu
+# a měřítko.
 # Histogram logaritmu hmotnosti má stejný tvar jako histogram výšky
 # rostlin z ukázky: oba vznikly se stejným set.seed() ze stejných
 # náhodných čísel z rnorm(), jen s jiným průměrem a rozptylem.
@@ -348,9 +349,9 @@ data_listy <-
 # Jeden řádek tabulky data_listy představuje jeden list.
 #
 # Shapiro–Wilkův test normality doplňuje Q–Q graf. Nulová hypotéza zní:
-# hodnoty odpovídají normálnímu tvaru. Malá p-hodnota je důkazem proti
+# hodnoty odpovídají normálnímu tvaru. Malá p-hodnota svědčí proti
 # ní. Test čteme vždy až po Q–Q grafu a s ohledem na počet pozorování:
-# u velkých vzorků odhalí i nepodstatnou odchylku, u malých přehlédne
+# u velkých výběrů odhalí i nepodstatnou odchylku, u malých přehlédne
 # i velkou. Použití: shapiro.test(x = ...).
 
 #----------------------------------------#
@@ -382,7 +383,7 @@ data_listy <-
 # a shapiro.test().
 #
 # Očekávaný výsledek:
-# Plocha i sušina mají dlouhý ocas vpravo. Residua jsou přibližně
+# Plocha i sušina mají dlouhý chvost vpravo. Residua jsou přibližně
 # souměrná a v Q–Q grafu leží blízko přímky. Test pro sušinu dává
 # p < 0,001, pro residua p ≈ 0,56. Odhadnutý sklon je asi 0,41 mg
 # na cm² (v receptu 0,4). Model je v pořádku, i když odezva normální není.
@@ -661,7 +662,7 @@ head(
 #
 # Očekávaný výsledek:
 # Objem je 0,29–2,18 m³, průměr (0,85 m³) je vyšší než medián (0,68 m³).
-# Residua přímky tvoří písmeno U: kladná u tenkých i tlustých stromů,
+# Residua přímky tvoří oblouk: kladná u tenkých i tlustých stromů,
 # záporná uprostřed. Kvadratický model má nižší AIC (asi -53,5 proti
 # -39,4). AIC mocninného modelu do srovnání nepatří, protože má jinou
 # odezvu; jeho residua tvoří vodorovný pás. Exponent je asi 2,20
@@ -682,10 +683,10 @@ head(
 # než se jmenují objekty z hlavních úloh, abyste je nepřepsali.
 
 #--------------------------------------------------#
-## Tvar rozdělení a velikost vzorku -----
+## Tvar rozdělení a velikost výběru -----
 #--------------------------------------------------#
 
-# Ukázka: dva vzorky ze stejného souměrného zvonu (simulovaná data),
+# Ukázka: dva výběry ze stejného souměrného zvonu (simulovaná data),
 # jeden s 20 a druhý s 2000 hodnotami. Recept je stejný jako u výšky
 # rostlin, mění se jen počet hodnot. Označte všechny řádky a spusťte je.
 set.seed(seed = 900723)
@@ -720,7 +721,7 @@ vec_zvon_2000 <-
 # a tedy tím, kolik hodnot připadne na každý sloupec histogramu.
 #
 # Nápověda 2:
-# Použijte hist() jako v ukázce s rostlinami. U malého vzorku zkuste
+# Použijte hist() jako v ukázce s rostlinami. U malého výběru zkuste
 # breaks = 10, u velkého breaks = 30.
 #
 # Očekávaný výsledek:
@@ -732,7 +733,7 @@ vec_zvon_2000 <-
 # Co z toho plyne pro posuzování tvaru z histogramu residuí u malých
 # datových souborů?
 
-# Ukázka: dva vzorky se stejným mírně pravostranně šikmým tvarem
+# Ukázka: dva výběry se stejným mírně pravostranně šikmým tvarem
 # (simulovaná data), 20 a 2000 hodnot. Recept je stejný jako u hmotnosti
 # ryb, jen s jinými čísly. Označte všechny řádky a spusťte je.
 set.seed(seed = 900723)
@@ -762,13 +763,13 @@ vec_mirne_2000 <-
 # Pracujte s vec_mirne_20 a vec_mirne_2000 z ukázky výše.
 # 1. Na oba vektory použijte shapiro.test().
 # 2. Nakreslete jejich Q–Q grafy s referenční přímkou.
-# 3. Do komentáře porovnejte p-hodnoty a Q–Q grafy obou vzorků.
+# 3. Do komentáře porovnejte p-hodnoty a Q–Q grafy obou výběrů.
 
 # Vaše řešení:
 
 
 # Nápověda 1:
-# Oba vzorky vznikly stejným receptem, takže mají stejně mírnou šikmost.
+# Oba výběry vznikly stejným receptem, takže mají stejně mírnou šikmost.
 # Liší se jen počtem hodnot, se kterým test pracuje.
 #
 # Nápověda 2:
@@ -792,7 +793,7 @@ vec_mirne_2000 <-
 #
 #   mean(x = ((x - mean(x)) / sd(x))^3)
 #
-# Kladné číslo znamená ocas vpravo, záporné ocas vlevo a číslo blízko
+# Kladné číslo znamená chvost vpravo, záporné chvost vlevo a číslo blízko
 # nuly souměrný tvar. Nejde o pravidlo s pevnou hranicí, jen o popis.
 # Spočítejte koeficient šikmosti pro vec_vyska_rostlin, vec_hmotnost_ryb
 # a vec_hmotnost_log z hlavních úloh.
@@ -859,7 +860,7 @@ data_bakterie <-
 #    logaritmu počtu buněk proti hodině.
 # 2. Vytvořte mod_bakterie: log(pocet_bunek) ~ hodina.
 # 3. Převeďte sklon na procento za hodinu: 100 * (exp(sklon) - 1).
-#    Totéž udělejte s oběma mezemi 95% intervalu spolehlivosti.
+#    Totéž udělejte s oběma hranicemi 95% intervalu spolehlivosti.
 
 # Vaše řešení:
 
@@ -915,7 +916,7 @@ vec_brouci <-
 #
 # Očekávaný výsledek:
 # Prázdných je 36 pastí. Logaritmus u nich dává -Inf, takže ho nelze
-# použít. Odmocnina nuly je 0 a histogram odmocniny má kratší ocas vpravo.
+# použít. Odmocnina nuly je 0 a histogram odmocniny má kratší chvost vpravo.
 #
 # Interpretace:
 # Pro počty s mnoha nulami existují vhodnější modely, ke kterým se
@@ -1128,7 +1129,7 @@ data_metabolismus_iso <-
 # jako argument newdata.
 #
 # Očekávaný výsledek:
-# Při 0 °C model předpovídá asi -12,9 mg za den a při 50 °C asi -19,7 mg
+# Při 0 °C model predikuje asi -12,9 mg za den a při 50 °C asi -19,7 mg
 # za den. Obě teploty leží mimo naměřený rozsah, kde parabola nemá oporu
 # v datech.
 #
@@ -1141,7 +1142,7 @@ data_metabolismus_iso <-
 #----------------------------------------------------------#
 # Zkuste bez kódu odpovědět na tyto otázky:
 # 1. Proč je veličina vzniklá násobením mnoha vlivů pravostranně šikmá?
-# 2. Které transformace mění jen měřítko a které i tvar rozdělení?
+# 2. Které transformace mění jen polohu a měřítko a které i tvar rozdělení?
 # 3. Co musí být u lineárního modelu přibližně normální?
 # 4. Jak v grafu residuí poznáte zakřivený vztah?
 # 5. Kdy pomůže logaritmus a kdy kvadratický člen?

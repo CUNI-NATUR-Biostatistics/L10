@@ -204,7 +204,7 @@ Po lekci dokážete:
 
 ::: incremental
 - popsat [tvar rozdělení]{.text-hgl-orange} proměnné nebo residuí z histogramu a Q–Q grafu a posoudit, zda je pro lineární model podstatný;
-- rozlišit transformace, které mění [jen měřítko]{.text-hgl-graphite} (jednotky, centrování, z-skóre), od těch, které [mění tvar]{.text-hgl-orange} (logaritmus, odmocnina);
+- rozlišit transformace, které mění [jen polohu a měřítko]{.text-hgl-graphite} (jednotky, centrování, z-skóre), od těch, které [mění tvar]{.text-hgl-orange} (logaritmus, odmocnina);
 - rozpoznat [zakřivený vztah]{.text-hgl-orange} v datech a navrhnout jednoduché řešení;
 - porovnat několik [biologicky smysluplných tvarů vztahu]{.text-hgl-indigo_velvet} jako kandidátní modely;
 - vysvětlit, jak transformace mění [interpretaci koeficientů]{.text-hgl-indigo_velvet}.
@@ -349,10 +349,10 @@ cowplot::plot_grid(graf_hist_druhy, graf_hist_plocha, nrow = 1)
 :::
 
 ::: {.notes}
-Zatím žádná nová slova. Nechte studenty popsat „hromadu vlevo“ a „řídký ocas vpravo“ vlastními slovy. Šířku koše (bin width) znají z L01.
+Zatím žádná nová slova. Nechte studenty popsat „hromadu vlevo“ a „řídký chvost vpravo“ vlastními slovy. Šířku koše (bin width) znají z L01.
 :::
 
-## Dlouhý ocas vpravo táhne průměr od mediánu
+## Dlouhý chvost vpravo táhne průměr od mediánu
 
 ```{r}
 #| label: spocitat-prumer-a-median
@@ -382,7 +382,7 @@ pridat_prumer_median <- function(graf, prumer, median) {
 #| label: zobrazit-prumer-a-median
 #| echo: false
 #| fig-height: 4
-#| fig-alt: "Stejné dva histogramy s oranžovou čarou průměru a přerušovanou grafitovou čarou mediánu. U obou proměnných leží průměr výrazně vpravo od mediánu, směrem k dlouhému ocasu."
+#| fig-alt: "Stejné dva histogramy s oranžovou čarou průměru a přerušovanou grafitovou čarou mediánu. U obou proměnných leží průměr výrazně vpravo od mediánu, směrem k dlouhému chvostu."
 cowplot::plot_grid(
   pridat_prumer_median(graf_hist_druhy, prumer_druhu, median_druhu),
   pridat_prumer_median(graf_hist_plocha, prumer_plochy, median_plochy),
@@ -400,11 +400,11 @@ Plocha (km²): [průměr `r format_cz(prumer_plochy, 1)`]{.text-hgl-orange} · [
 :::
 
 ::: {.fragment .takeaway-strip}
-Rozdělení s dlouhým ocasem vpravo je **pravostranně šikmé** (*right-skewed*).
+Rozdělení s dlouhým chvostem vpravo je **pravostranně šikmé** (*right-skewed*).
 :::
 
 ::: {.notes}
-Callback L01: u hmotnosti savců jsme tehdy říkali „výrazně asymetrická“ a doporučili medián. Šikmost se pojmenovává podle strany dlouhého ocasu, ne podle strany, kde leží většina hodnot.
+Callback L01: u hmotnosti savců jsme tehdy říkali „výrazně asymetrická“ a doporučili medián. Šikmost se pojmenovává podle strany dlouhého chvostu, ne podle strany, kde leží většina hodnot.
 :::
 
 ## Které slovo patří ke kterému tvaru?
@@ -423,7 +423,7 @@ data_galerie_tvaru <-
         "dva vrcholy",
         "pravostranně šikmé",
         "souměrné",
-        "těžké konce",
+        "těžké chvosty",
         "levostranně šikmé"
       ),
       each = pocet_simulovanych_hodnot
@@ -451,7 +451,7 @@ data_galerie_tvaru <-
 #| label: zobrazit-galerii-tvaru
 #| echo: false
 #| fig-height: 3.7
-#| fig-alt: "Pět simulovaných histogramů označených 1 až 5. Panel 1 má dva oddělené vrcholy. Panel 2 má vrchol vlevo a dlouhý ocas vpravo. Panel 3 je souměrný zvon. Panel 4 je úzký souměrný vrchol s ojedinělými vzdálenými hodnotami na obou stranách. Panel 5 má vrchol vpravo a dlouhý ocas vlevo."
+#| fig-alt: "Pět simulovaných histogramů označených 1 až 5. Panel 1 má dva oddělené vrcholy. Panel 2 má vrchol vlevo a dlouhý chvost vpravo. Panel 3 je souměrný zvon. Panel 4 je úzký souměrný vrchol s ojedinělými vzdálenými hodnotami na obou stranách. Panel 5 má vrchol vpravo a dlouhý chvost vlevo."
 ggplot2::ggplot(
   data = data_galerie_tvaru,
   mapping = ggplot2::aes(x = hodnota)
@@ -466,16 +466,16 @@ ggplot2::ggplot(
   )
 ```
 
-**souměrné · pravostranně šikmé · levostranně šikmé · těžké konce · dva vrcholy**
+**souměrné · pravostranně šikmé · levostranně šikmé · těžké chvosty · dva vrcholy**
 
 [**Ve dvojici:** Přiřaďte každému panelu jedno slovo.]{.text-size-smaller}
 
 ::: {.fragment .text-size-tiny}
-[1 dva vrcholy]{.text-hgl-graphite} · [2 pravostranně šikmé]{.text-hgl-orange} · [3 souměrné]{.text-hgl-graphite} · [4 těžké konce]{.text-hgl-graphite} · [5 levostranně šikmé]{.text-hgl-graphite}
+[1 dva vrcholy]{.text-hgl-graphite} · [2 pravostranně šikmé]{.text-hgl-orange} · [3 souměrné]{.text-hgl-graphite} · [4 těžké chvosty]{.text-hgl-graphite} · [5 levostranně šikmé]{.text-hgl-graphite}
 :::
 
 ::: {.notes}
-Callbacky: těžší chvosty t-rozdělení (L05) jsou totéž co těžké konce; dva vrcholy jsme viděli u délek erupcí Old Faithful (L04). Panel 4 se od panelu 3 liší hlavně vzdálenými hodnotami, střed má naopak užší. Počet druhů i plocha jsou typ 2.
+Callbacky: těžké chvosty jsme viděli u t-rozdělení (L05); dva vrcholy jsme viděli u délek erupcí Old Faithful (L04). Panel 4 se od panelu 3 liší hlavně vzdálenými hodnotami, střed má naopak užší. Počet druhů i plocha jsou typ 2.
 :::
 
 ## Proč je tolik biologických veličin pravostranně šikmých?
@@ -525,7 +525,7 @@ Plocha ostrova ani počet druhů nemohou klesnout pod nulu. Jak velké ale mohou
 #| label: zobrazit-scitani-a-nasobeni
 #| echo: false
 #| fig-height: 2.9
-#| fig-alt: "Dva histogramy simulovaných velikostí tisíce populací po dvaceti krocích. Vlevo, kde se přírůstky přičítají, vzniká souměrný zvon kolem počáteční velikosti. Vpravo, kde se velikost násobí, má rozdělení vrchol vlevo a dlouhý ocas vpravo."
+#| fig-alt: "Dva histogramy simulovaných velikostí tisíce populací po dvaceti krocích. Vlevo, kde se přírůstky přičítají, vzniká souměrný zvon kolem počáteční velikosti. Vpravo, kde se velikost násobí, má rozdělení vrchol vlevo a dlouhý chvost vpravo."
 ggplot2::ggplot(
   data = data_scitani_nasobeni,
   mapping = ggplot2::aes(x = velikost)
@@ -547,7 +547,7 @@ ggplot2::ggplot(
 :::
 
 ::: {.fragment .takeaway-strip}
-[Hranice v nule]{.text-hgl-orange} a [růst násobením]{.text-hgl-orange} vytvářejí dlouhý ocas vpravo — vlastnost biologie, ne chyba dat.
+[Hranice v nule]{.text-hgl-orange} a [růst násobením]{.text-hgl-orange} vytvářejí dlouhý chvost vpravo — vlastnost biologie, ne chyba dat.
 :::
 
 ::: {.notes}
@@ -697,10 +697,10 @@ Normální rozdělení je [vzor pro srovnání]{.text-hgl-graphite}, ne vlastnos
 :::
 
 ::: {.notes}
-Proto jsme v L01 u asymetrických dat doporučili medián a mezikvartilové rozpětí. Ke které části modelu se normální rozdělení vztahuje, ukáže další část.
+Proto jsme v L01 u šikmých dat doporučili medián a mezikvartilové rozpětí. Ke které části modelu se normální rozdělení vztahuje, ukáže další část.
 :::
 
-## Jak se dlouhý ocas pozná v Q–Q grafu?
+## Jak se dlouhý chvost pozná v Q–Q grafu?
 
 ```{r}
 #| label: pripravit-qq-galerii
@@ -711,7 +711,7 @@ vec_poradi_qq <- c(
   "b" = "dva vrcholy",
   "c" = "levostranně šikmé",
   "d" = "souměrné",
-  "e" = "těžké konce"
+  "e" = "těžké chvosty"
 )
 
 vec_tvary_histogramu <- levels(data_galerie_tvaru$cislo)
@@ -844,7 +844,7 @@ graf_spojnice +
 [**Ve dvojici:** Který Q–Q graf a–e patří ke kterému histogramu 1–5?]{.text-size-smaller}
 :::
 ::: {.column width="58%" .fragment fragment-index=1 .text-size-smaller}
-Nápověda: [dlouhý ocas vpravo]{.text-hgl-orange} zvedá body vpravo nad přímku.
+Nápověda: [dlouhý chvost vpravo]{.text-hgl-orange} zvedá body vpravo nad přímku.
 :::
 :::
 
@@ -1006,7 +1006,7 @@ graf_kotva +
 `r ostrov_rozklad$ostrov`: [`r format_cz(ostrov_rozklad$pocet_druhu, 0)`]{.text-hgl-graphite} druhů
 
 ::: {.fragment}
-= odhad přímky [`r format_cz(ostrov_rozklad$odhad, 0)`]{.text-hgl-indigo_velvet}
+= odhadnutá hodnota [`r format_cz(ostrov_rozklad$odhad, 0)`]{.text-hgl-indigo_velvet}
 
 \+ residuum [`r format_cz(ostrov_rozklad$residuum, 0)`]{.text-hgl-orange}
 :::
@@ -1111,7 +1111,7 @@ vykreslit_diagnostiku <- function(model, popisek_residua) {
     ggplot2::ggplot(data = data_diag, mapping = ggplot2::aes(sample = residuum)) +
     ggplot2::stat_qq(colour = barva_data, size = 2.6) +
     ggplot2::stat_qq_line(colour = barva_reference, linetype = "dashed", linewidth = 1) +
-    ggplot2::labs(x = "Teoretický kvantil", y = popisek_residua, title = "Q–Q graf") +
+    ggplot2::labs(x = "Teoretický kvantil normálního rozdělení", y = popisek_residua, title = "Q–Q graf") +
     theme_l10
 
   cowplot::plot_grid(graf_rv, graf_hist, graf_qq, nrow = 1)
@@ -1122,7 +1122,7 @@ vykreslit_diagnostiku <- function(model, popisek_residua) {
 #| label: zobrazit-diagnostiku-primky
 #| echo: false
 #| fig-height: 4
-#| fig-alt: "Tři diagnostické grafy přímky. Residua proti odhadnutým hodnotám jsou nahuštěná vlevo a jejich rozptyl roste doprava. Histogram residuí má dlouhý ocas vpravo. Q–Q graf se vpravo nahoře prudce zvedá nad přímku."
+#| fig-alt: "Tři diagnostické grafy přímky. Residua proti odhadnutým hodnotám jsou nahuštěná vlevo a jejich rozptyl roste doprava. Histogram residuí má dlouhý chvost vpravo. Q–Q graf se vpravo nahoře prudce zvedá nad přímku."
 vykreslit_diagnostiku(model = mod_primka, popisek_residua = "Residuum (druhy)")
 ```
 
@@ -1131,7 +1131,7 @@ vykreslit_diagnostiku(model = mod_primka, popisek_residua = "Residuum (druhy)")
 :::
 
 ::: {.fragment .text-size-smaller}
-Residua tvoří [ohyb]{.text-hgl-orange} · jejich [rozptyl roste doprava]{.text-hgl-orange} · histogram i Q–Q graf ukazují [dlouhý ocas vpravo]{.text-hgl-orange}.
+Residua tvoří [oblouk]{.text-hgl-orange} · jejich [rozptyl roste doprava]{.text-hgl-orange} · histogram i Q–Q graf ukazují [dlouhý chvost vpravo]{.text-hgl-orange}.
 :::
 
 ::: {.notes}
@@ -1265,7 +1265,7 @@ cowplot::plot_grid(graf_cook_vse, graf_cook_bez_max, nrow = 1)
 ```
 :::
 ::: {.column width="38%" .text-size-smaller}
-Cookova vzdálenost: jak moc se přímka změní, když ostrov vynecháme.
+Cookova vzdálenost: jak moc se změní odhadnuté hodnoty, když ostrov vynecháme.
 
 `r ostrov_cook_max`: [`r format_cz(cook_max_primka, 1)`]{.text-hgl-orange} · druhý nejvyšší, `r ostrov_cook_druhy`: `r format_cz(cook_druhy_primka, 2)`
 
@@ -1281,7 +1281,7 @@ předpoklad modelu [neporušuje]{.text-hgl-graphite} — o rozdělení prediktor
 ::: {.panel-warning}
 [Přesto praktický problém]{.panel-title}
 
-jeden ostrov [natáčí celou přímku]{.text-hgl-orange} jako dlouhá páka.
+jeden ostrov [natáčí celou přímku]{.text-hgl-orange} jako dlouhá páka (pákový efekt).
 :::
 :::
 :::
@@ -1306,7 +1306,7 @@ Jak rychle roste počet druhů rostlin s plochou ostrova?
 
 - počet druhů i plocha jsou [pravostranně šikmé]{.text-hgl-orange};
 - přímka míjí většinu malých ostrovů;
-- residua se ohýbají, rozšiřují a mají dlouhý ocas;
+- residua se ohýbají, rozšiřují a mají dlouhý chvost;
 - přímku natáčí [jediný ostrov]{.text-hgl-orange}.
 :::
 :::
@@ -1322,7 +1322,7 @@ Jak rychle roste počet druhů rostlin s plochou ostrova?
 
 ::::
 
-# Transformace: měřítko, nebo tvar?
+# Transformace: poloha a měřítko, nebo tvar?
 
 ## Změní se tvar rozdělení, když plochu převedeme na hektary?
 
@@ -1462,7 +1462,7 @@ ggplot2::ggplot(
 :::
 
 ::: {.fragment .text-size-smaller}
-Sklon se [nezměnil]{.text-hgl-graphite} (`r format_cz(coef(mod_primka)[[2]], 3)`). Intercept `r format_cz(coef(mod_primka)[[1]], 1)` → [`r format_cz(coef(mod_centrovany)[[1]], 1)`]{.text-hgl-indigo_velvet}: odhad druhů pro ostrov [průměrné plochy]{.text-hgl-indigo_velvet}, ne pro neexistující ostrov s nulovou plochou. · [mění jen měřítko]{.text-hgl-graphite}
+Sklon se [nezměnil]{.text-hgl-graphite} (`r format_cz(coef(mod_primka)[[2]], 3)`). Intercept `r format_cz(coef(mod_primka)[[1]], 1)` → [`r format_cz(coef(mod_centrovany)[[1]], 1)`]{.text-hgl-indigo_velvet}: odhad druhů pro ostrov [průměrné plochy]{.text-hgl-indigo_velvet}, ne pro neexistující ostrov s nulovou plochou. · [mění jen polohu]{.text-hgl-graphite}
 :::
 
 ::: {.notes}
@@ -1668,7 +1668,7 @@ Callback L01: logaritmická osa tehdy měnila jen rozestupy v grafu; teď logari
 
 :::: {.layout-stack .layout-center-y}
 
-Stejnou plochu ostrovů zobrazíme ve čtyřech měřítkách. Které histogramy budou vypadat [jinak než histogram v km²]{.text-hgl-orange}?
+Stejnou plochu ostrovů zobrazíme na čtyřech škálách. Které histogramy budou vypadat [jinak než histogram v km²]{.text-hgl-orange}?
 
 ::: columns
 ::: {.column width="24%"}
@@ -1705,7 +1705,7 @@ Stejnou plochu ostrovů zobrazíme ve čtyřech měřítkách. Které histogramy
 
 ::::
 
-## Stejné ostrovy ve čtyřech měřítkách
+## Stejné ostrovy na čtyřech škálách
 
 ```{r}
 #| label: zobrazit-ctyri-transformace
@@ -1747,15 +1747,15 @@ ggplot2::ggplot(data = data_ctyri_transformace, mapping = ggplot2::aes(x = hodno
 Logaritmus roztáhne malé hodnoty a stlačí velké: rozdíl mezi 1 a 10 km² je stejně velký jako mezi 1 000 a 10 000 km². Malé ostrovy z prvního koše se rozprostřou přes celou osu. Log-normální = souměrné po zlogaritmování; typicky vzniká násobením (simulace populací).
 :::
 
-## Které transformace mění jen měřítko a které i tvar?
+## Které transformace mění jen polohu a měřítko a které i tvar?
 
 ::: columns
 ::: {.column width="64%" .text-size-smaller}
 | Transformace | V R | Mění | Kdy se hodí |
 |---|---|---|---|
 | jednotky | `x * 100` | [měřítko]{.text-hgl-graphite} | různé zdroje dat |
-| centrování | `x - mean(x)` | [měřítko]{.text-hgl-graphite} | smysluplný intercept |
-| z-skóre | `scale(x)` | [měřítko]{.text-hgl-graphite} | různé jednotky |
+| centrování | `x - mean(x)` | [polohu]{.text-hgl-graphite} | smysluplný intercept |
+| z-skóre | `scale(x)` | [polohu i měřítko]{.text-hgl-graphite} | různé jednotky |
 | odmocnina | `sqrt(x)` | [tvar]{.text-hgl-orange} | mírně šikmé počty |
 | logaritmus | `log(x)` | [tvar]{.text-hgl-orange} | násobné změny |
 :::
@@ -1773,7 +1773,7 @@ include_optional_figure(data_source = "ostrovy_hlina.png")
 :::
 
 ::: {.takeaway-strip}
-Dlouhý ocas zkrátí jen transformace, která [mění tvar]{.text-hgl-orange}.
+Dlouhý chvost zkrátí jen transformace, která [mění tvar]{.text-hgl-orange}.
 :::
 
 ::: {.notes}
@@ -1900,7 +1900,7 @@ Intercept pro [první rok sledování]{.text-hgl-graphite}, ne pro rok 0.
 [`r if (any(file.exists(here::here(path_materials, vec_galerie)))) "Ilustrace vytvořené pomocí AI." else ""`]{.text-size-tiny .text-right}
 
 ::: {.notes}
-Příklady pocházejí z rámečků „Kdy používáme…“ ve skriptech. Fialové karty mění tvar silně (logaritmus), ametystová mírně (odmocnina), šedé jen měřítko. Kdy ne: proměnné s nulami nebo zápornými hodnotami logaritmovat nelze; pokud jsou residua v pořádku a biologické tvrzení je aditivní, transformace není potřeba.
+Příklady pocházejí z rámečků „Kdy používáme…“ ve skriptech. Fialové karty mění tvar silně (logaritmus), ametystová mírně (odmocnina), šedé jen polohu a měřítko. Kdy ne: proměnné s nulami nebo zápornými hodnotami logaritmovat nelze; pokud jsou residua v pořádku a biologické tvrzení je aditivní, transformace není potřeba.
 :::
 
 ## Stejní savci v kilogramech a po logaritmu
@@ -1918,7 +1918,7 @@ pocet_odlehlych_log <- length(grDevices::boxplot.stats(log(data_savci$hmotnost_k
 #| label: zobrazit-savce
 #| echo: false
 #| fig-height: 3.8
-#| fig-alt: "Dva histogramy tělesné hmotnosti savců. V kilogramech jsou téměř všechny druhy v prvním koši a několik obřích druhů tvoří dlouhý ocas vpravo. Po logaritmu jsou druhy rozložené přibližně souměrně."
+#| fig-alt: "Dva histogramy tělesné hmotnosti savců. V kilogramech jsou téměř všechny druhy v prvním koši a několik obřích druhů tvoří dlouhý chvost vpravo. Po logaritmu jsou druhy rozložené přibližně souměrně."
 vec_skaly_savci <- c("Hmotnost (kg)", "Logaritmus hmotnosti")
 
 data_savci_dve_skaly <- data.frame(
@@ -1943,13 +1943,13 @@ ggplot2::ggplot(data = data_savci_dve_skaly, mapping = ggplot2::aes(x = hodnota)
 :::
 
 ::: {.fragment .text-size-smaller}
-Po logaritmu [`r pocet_odlehlych_log`]{.text-hgl-orange}. Největší savci leželi jen v [dlouhém ocasu]{.text-hgl-orange} šikmého rozdělení — co je odlehlé, záleží na škále.
+Po logaritmu [`r pocet_odlehlych_log`]{.text-hgl-orange}. Největší savci leželi jen v [dlouhém chvostu]{.text-hgl-orange} šikmého rozdělení — co je odlehlé, záleží na škále.
 :::
 
 [Data: `ggplot2::msleep` (`r pocet_savcu` druhů savců), stejná jako v první lekci]{.footer}
 
 ::: {.notes}
-Krabicový graf v L01 počítal hranice odlehlých hodnot v kilogramech. Po logaritmu žádný druh za vousy neleží: velcí savci jsou skutečně velcí, ale na násobné škále, na které se velikost organismů mění, tolik nevybočují.
+Krabicový graf v L01 počítal hranice odlehlých pozorování v kilogramech. Po logaritmu žádný druh za vousy neleží: velcí savci jsou skutečně velcí, ale na násobné škále, na které se velikost organismů mění, tolik nevybočují.
 :::
 
 # Tvar vztahu
@@ -1957,7 +1957,7 @@ Krabicový graf v L01 počítal hranice odlehlých hodnot v kilogramech. Po loga
 ## Jak vypadá vztah plochy a počtu druhů na logaritmických osách?
 
 ::: {.panel-question}
-Logaritmus z šikmé plochy udělal souměrné rozdělení. Co udělá s [ohybem]{.text-hgl-orange} ve vztahu plochy a počtu druhů?
+Logaritmus z šikmé plochy udělal souměrné rozdělení. Co udělá s [obloukem]{.text-hgl-orange} ve vztahu plochy a počtu druhů?
 :::
 
 ::: {.fragment}
@@ -2255,7 +2255,7 @@ Parabola se [musí obrátit]{.text-hgl-orange}. K Isabele se ohýbá jen proto, 
 :::
 
 ::: {.notes}
-Biologický důvod, proč by větší ostrov měl mít méně druhů, nemáme. Ilustrace: most nad stále většími ostrovy, který nad tím největším a nejzelenějším začne klesat. Předpovědi za okrajem dat jsou u paraboly obzvlášť riskantní.
+Biologický důvod, proč by větší ostrov měl mít méně druhů, nemáme. Ilustrace: most nad stále většími ostrovy, který nad tím největším a nejzelenějším začne klesat. Predikce za okrajem dat jsou u paraboly obzvlášť riskantní.
 :::
 
 ##
@@ -2289,7 +2289,7 @@ Ano, AIC modelu C je o `r format_cz(aic_d - aic_c, 0)` nižší, takže C popisu
 ::: {.card-question}
 **B**
 
-[Ne, každý z modelů předpovídá jinou odezvu, takže jejich AIC porovnat nelze.]{.rn-circle-orange}
+[Ne, každý z modelů modeluje jinou odezvu, takže jejich AIC porovnat nelze.]{.rn-circle-orange}
 :::
 :::
 ::: {.column width="24%"}
@@ -2313,7 +2313,7 @@ Přesvědčte souseda, proč jste vybrali svoji možnost.
 :::
 
 ::: {.fragment}
-Pravidlo z minulé lekce: AIC porovnáváme jen u modelů se [stejnou odezvou]{.text-hgl-orange} na stejných pozorováních. Logaritmus stlačí velké hodnoty, takže residua C jsou čísla v úplně jiném měřítku.
+Pravidlo z minulé lekce: AIC porovnáváme jen u modelů se [stejnou odezvou]{.text-hgl-orange} na stejných pozorováních. Logaritmus stlačí velké hodnoty, takže residua C jsou čísla na úplně jiné škále.
 :::
 
 ::::
@@ -2389,7 +2389,7 @@ vykreslit_diagnostiku(model = mod_c_mocninny, popisek_residua = "Residuum (log)"
 :::
 
 ::: {.fragment .text-size-smaller}
-Pás bez [ohybu]{.text-hgl-orange} i [rostoucího rozptylu]{.text-hgl-orange} · Q–Q graf blízko přímky · největší Cookova vzdálenost [`r format_cz(cook_max_mocninny, 2)`]{.text-hgl-indigo_velvet} místo `r format_cz(cook_max_primka, 1)`. S `r pocet_ostrovu` ostrovy čteme opatrně, ale všechny grafy ukazují stejným směrem.
+Pás bez [oblouku]{.text-hgl-orange} i [rostoucího rozptylu]{.text-hgl-orange} · Q–Q graf blízko přímky · největší Cookova vzdálenost [`r format_cz(cook_max_mocninny, 2)`]{.text-hgl-indigo_velvet} místo `r format_cz(cook_max_primka, 1)`. S `r pocet_ostrovu` ostrovy čteme opatrně, ale všechny grafy ukazují stejným směrem.
 :::
 
 ::: {.notes}
@@ -2405,12 +2405,12 @@ Vějíř zmizel, protože logaritmus převádí stejné relativní rozptýlení 
 #| echo: false
 #| fig-width: 6
 #| fig-height: 3.8
-#| fig-alt: "Histogram počtu druhů s dlouhým ocasem vpravo."
+#| fig-alt: "Histogram počtu druhů s dlouhým chvostem vpravo."
 graf_hist_druhy +
   ggplot2::labs(title = "Odezva: počet druhů")
 ```
 
-[Odezva má [dlouhý ocas vpravo]{.text-hgl-orange}.]{.text-size-smaller}
+[Odezva má [dlouhý chvost vpravo]{.text-hgl-orange}.]{.text-size-smaller}
 :::
 ::: {.column width="48%"}
 ```{r}
@@ -2426,7 +2426,7 @@ ggplot2::ggplot(
   ggplot2::stat_qq(colour = barva_data, size = 2.8) +
   ggplot2::stat_qq_line(colour = barva_reference, linetype = "dashed", linewidth = 1) +
   ggplot2::labs(
-    x = "Teoretický kvantil",
+    x = "Teoretický kvantil normálního rozdělení",
     y = "Residuum (druhy)",
     title = "Residua kandidáta B (logaritmus plochy)"
   ) +
@@ -2563,7 +2563,7 @@ Zpětný převod `exp()` dává [typický]{.text-hgl-orange} ostrov dané plochy
 :::
 
 ::: {.notes}
-Typické předpovědi: 1 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[1], 0)`, 10 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[2], 0)`, 100 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[3], 0)`, 1 000 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[4], 0)` druhů. Model odhaduje průměr logaritmu; po převodu exp() dostaneme geometrický průměr, který u log-normálních dat leží blízko mediánu (callback L01: medián pro asymetrická data).
+Typické predikce: 1 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[1], 0)`, 10 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[2], 0)`, 100 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[3], 0)`, 1 000 km² ≈ `r format_cz(data_nove_plochy$pocet_druhu[4], 0)` druhů. Model odhaduje průměr logaritmu; po převodu exp() dostaneme geometrický průměr, který u log-normálních dat leží blízko mediánu (callback L01: medián pro šikmá data).
 :::
 
 ## Jak číst koeficient, když logaritmujeme jen jednu stranu?
@@ -2596,7 +2596,7 @@ procento_na_sto_km2 <- 100 * (exp(100 * sklon_e) - 1)
 ::: {.card-question}
 **2** · Jak rychle počet druhů roste, [se mění podél křivky]{.text-hgl-indigo_velvet}.
 
-[→ D · kvadratický člen: čteme předpovědi, ne jednotlivé koeficienty]{.fragment .text-size-smaller}
+[→ D · kvadratický člen: čteme predikce, ne jednotlivé koeficienty]{.fragment .text-size-smaller}
 :::
 :::
 ::: {.column width="32%"}
@@ -2615,7 +2615,7 @@ Logaritmus [prediktoru]{.text-hgl-orange} → přírůstek na zdvojnásobení ·
 ::::
 
 ::: {.notes}
-B: sklon × ln 2. E: exp(100 × sklon); pro malé sklony je 100 × sklon přibližně procento na jednotku. D: u paraboly jsou předpovědi mimo rozsah pozorovaných ploch obzvlášť riskantní.
+B: sklon × ln 2. E: exp(100 × sklon); pro malé sklony je 100 × sklon přibližně procento na jednotku. D: u paraboly jsou predikce mimo rozsah pozorovaných ploch obzvlášť riskantní.
 :::
 
 ## Zmizí oblouk v residuích stromů po logaritmu průměru kmene?
@@ -2690,7 +2690,7 @@ Oblouk se [zploštil]{.text-hgl-orange}, ale nezmizel: stromy s odhadnutou výš
 :::
 
 ::: {.notes}
-Odpověď na otázku z L09: tvar vztahu byl hlavní, i když ne jediný problém. Residua pod nulou = model výšku přeceňuje; nejnižší stromy (odhad pod 10 m) leží mírně nad nulou. Kvadratický model stromů by měl AIC ještě nižší, ale jeho parabola pro nejširší stromy předpovídá nižší výšku — stejná lekce jako u ostrovů (viz skripta).
+Odpověď na otázku z L09: tvar vztahu byl hlavní, i když ne jediný problém. Residua pod nulou = model výšku přeceňuje; nejnižší stromy (odhad pod 10 m) leží mírně nad nulou. Kvadratický model stromů by měl AIC ještě nižší, ale jeho parabola pro nejširší stromy predikuje nižší výšku — stejná lekce jako u ostrovů (viz skripta).
 :::
 
 # Závěr
@@ -2790,7 +2790,7 @@ Plocha souvisí i s dalšími vlastnostmi ostrova (nadmořská výška, rozmanit
 ::: incremental
 - Mnoho biologických veličin je [pravostranně šikmých]{.text-hgl-orange}: hranice v nule a růst násobením.
 - Lineární model předpokládá přibližně normální [residua]{.text-hgl-orange}, ne odezvu nebo prediktor.
-- Jednotky, centrování a z-skóre mění [jen měřítko]{.text-hgl-graphite}; logaritmus a odmocnina [mění tvar]{.text-hgl-orange}.
+- Jednotky, centrování a z-skóre mění [jen polohu a měřítko]{.text-hgl-graphite}; logaritmus a odmocnina [mění tvar]{.text-hgl-orange}.
 - Logaritmus převádí násobky na stejné kroky, a proto z [mocninného vztahu]{.text-hgl-indigo_velvet} udělá přímku.
 - AIC porovnáváme jen při [stejné odezvě]{.text-hgl-orange}; koeficienty po transformaci čteme jako násobky nebo přírůstky.
 :::
